@@ -1,0 +1,26 @@
+{
+  "name": "langit-atlas",
+  "version": "1.0.0",
+  "author": "proleeeeeeeeee (https://github.com/proleeeeeeeeee)",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "check": "tsc --noEmit",
+    "build": "npm run check && vite build",
+    "build:offline": "vite build --mode offline",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "astronomy-engine": "2.1.19",
+    "three": "0.187.0"
+  },
+  "devDependencies": {
+    "@types/three": "0.187.0",
+    "typescript": "5.9.3",
+    "vite": "8.3.8"
+  },
+  "engines": {
+    "node": "^20.19.0 || >=22.12.0"
+  }
+}

@@ -1,0 +1,56 @@
+马来西亚夜空历史底图 | 数据署名与使用说明
+Malaysia night-sky baseline | Attribution and methods
+
+World Atlas of Artificial Night Sky Brightness
+
+Fabio Falchi, Pierantonio Cinzano, Dan Duriscoe, Christopher C. M. Kyba,
+Christopher D. Elvidge, Kimberly Baugh, Boris Portnov, Nataliya A. Rybnikova
+and Riccardo Furgoni (2016). Supplement to: The New World Atlas of Artificial
+Night Sky Brightness. GFZ Data Services.
+https://doi.org/10.5880/GFZ.1.4.2016.001
+
+Falchi et al. (2016). The new world atlas of artificial night sky brightness.
+Science Advances 2, e1600377.
+https://doi.org/10.1126/sciadv.1600377
+
+The dataset is licensed under Creative Commons Attribution-NonCommercial 4.0
+International. The GFZ catalogue records the licence change on 13 November 2019.
+https://creativecommons.org/licenses/by-nc/4.0/
+https://api.datacite.org/dois/10.5880/gfz.1.4.2016.001
+
+本项目取自 GFZ 原始浮点 GeoTIFF，仅保留两个马来西亚区域。每次坐标查询使用原图
+30 角秒网格，赤道附近每格约 0.93 公里。2016 年发表的模型以 2014 年 VIIRS 夜光
+数据为基础，表示晴朗条件下天顶的人造光亮度，单位为毫坎德拉每平方米（mcd/m²）。
+数值经过对数量化，正数的编码相对误差小于 4.2%。模型参考天然天光为
+0.174 mcd/m²。人工亮度除以这个参考值，即为人工亮度相对天然参考天光的比例。
+零输出不适合作为地点天光极暗的证据，网站将其标记为缺少可用估值。
+
+This adaptation crops the original GeoTIFF to two rectangles, keeps native
+30 arcsecond source cells, logarithmically quantizes positive model luminance
+(encoding error under 4.2% for these crops), and creates two colour-mapped,
+Web Mercator PNG overlays. Source zero results and source nodata are treated
+as unavailable in point queries. Model inputs are a 2014 VIIRS composite.
+The model estimates artificial zenith luminance under reference clear-sky
+conditions. It cannot report the night's weather, moonlight, an actual SQM
+meter reading, a Bortle observation, or a probability of seeing the Milky Way.
+
+Natural Earth
+
+Made with Natural Earth. Public domain.
+https://www.naturalearthdata.com/
+https://www.naturalearthdata.com/about/terms-of-use/
+The cartography crops and simplifies Natural Earth 1:10m Admin 0 Countries,
+Admin 1 States Provinces Lines, Roads, and Rivers + Lake Centerlines. These
+are generalized geographic features. Included countries provide coastal context.
+
+GeoNames
+
+Place names, coordinates and selected aliases from the GeoNames MY gazetteer.
+https://www.geonames.org/
+https://download.geonames.org/export/dump/MY.zip
+https://creativecommons.org/licenses/by/4.0/
+Attribution under Creative Commons Attribution 4.0 International. This extract
+selects Malaysian settlements and named geographic features, includes selected
+search aliases, and adds Chinese display labels. It is a partial gazetteer.
+No account, map service, geolocation permission or API key is required for
+the embedded geographic and light-pollution data.

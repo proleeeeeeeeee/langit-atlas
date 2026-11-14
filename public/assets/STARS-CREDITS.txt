@@ -1,0 +1,42 @@
+Langit Atlas bright-star catalogue
+
+Derived from the HYG Stellar Database v4.1 by David Nash (Astronexus).
+HYG combines the Hipparcos, Yale Bright Star and Gliese catalogues.
+The source and this adapted bright-star subset are licensed under the
+Creative Commons Attribution-ShareAlike 4.0 International licence.
+
+Source dataset and author
+https://github.com/astronexus/HYG-Database/blob/3bf37f4b2d5460e1278286320d1d62fab9b493c1/hyg/CURRENT/hygdata_v41.csv
+https://github.com/astronexus
+
+Source field descriptions and dataset licence
+https://github.com/astronexus/HYG-Database/blob/main/hyg/README.md
+https://github.com/astronexus/HYG-Database/blob/3bf37f4b2d5460e1278286320d1d62fab9b493c1/hyg/CURRENT/LICENSE
+https://creativecommons.org/licenses/by-sa/4.0/
+
+Langit Atlas selected all 523 non-solar catalogue entries with apparent
+visual magnitude at or brighter than 4.00. Each JSON row contains
+[right ascension in degrees, declination in degrees, apparent visual magnitude].
+The coordinates use epoch and equinox J2000.0. Right ascension was converted
+from hours to degrees by multiplying by 15. Both angles were rounded to four
+decimal places. Rows are sorted by apparent magnitude, then right ascension.
+Lower magnitude values mean brighter catalogue stars. Variable-star magnitudes
+use the source catalogue value. Local horizon, weather and time are applied
+separately when rendering. A source row with id 0 (the Sun) was excluded.
+
+星表取自 David Nash（Astronexus）编制的 HYG 4.1。星野手记筛选了 523 颗视星等
+不大于 4.00 的恒星，并转换、舍入其坐标。星表和该子集均依 CC BY-SA 4.0 授权。
+每行依次为 J2000.0 赤经（度）、赤纬（度）、目视星等。数值越小，星表中的恒星越亮。
+
+Reference rows for checking a renderer (zero-based index)
+0   Sirius     [101.2872,-16.7161,-1.44]
+1   Canopus    [95.9879,-52.6957,-0.62]
+4   Vega       [279.2346,38.7837,0.03]
+12  Acrux      [186.6497,-63.0991,0.77]
+16  Antares    [247.3519,-26.432,1.06]
+47  Polaris    [37.9462,89.2641,1.97]
+
+SHA-256, original hygdata_v41.csv
+d9f69fd86bbf90a4e4d52b4c5c53eacfa6dfc0bfdef85bfd94f095e0bebe4ebd
+SHA-256, bright-stars.json
+4e83cf8d5375cde4de5a5a184546977111a4de3e05b178960896ec1db08a6607

@@ -1,0 +1,182 @@
+<!doctype html>
+<html lang="zh-Hans">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <meta name="theme-color" content="#0c0d0c">
+  <meta name="description" content="选择马来西亚的地点和日期，查看暗空、银河、月光与云量，规划一晚的星空摄影。">
+  <title>星野手记 · Langit Atlas</title>
+  <link rel="icon" href="/assets/mark.svg" type="image/svg+xml">
+</head>
+<body>
+  <a class="skip" href="#top" data-l="skip">跳到主要内容</a>
+  <header class="mast">
+    <div class="shell mast-inner">
+      <a class="wordmark" data-action="home" href="#top" data-l-aria="home" aria-label="星野手记首页">
+        <strong>Langit Atlas</strong><span class="brand-cn" data-l="brand">星野手记</span>
+      </a>
+      <nav data-l-aria="nav" aria-label="主导航">
+        <button data-open="map" data-l="map">光污染地图</button>
+        <button data-open="guide" data-l="guide">读图指南</button>
+      </nav>
+      <div class="mast-tools">
+        <button data-open="saved" class="top-tool" data-l-aria="saved" aria-label="收藏地点"><i data-i="bookmark"></i><span data-l="saved">收藏地点</span></button>
+        <button id="night-toggle" class="ico" aria-label="开启红光夜视" data-l-title="nightTitle" title="红光夜视" aria-pressed="false"><i data-i="moon-star"></i></button>
+        <button id="lang-toggle" class="lang-toggle" aria-label="切换到 English"><span lang="zh-Hans" class="lang-zh">中文</span><span aria-hidden="true">/</span><span lang="en" class="lang-en">EN</span></button>
+        <button id="menu" class="ico mobile-only" data-open="menu" data-l-aria="menu" aria-label="导航菜单"><i data-i="menu"></i></button>
+      </div>
+    </div>
+  </header>
+  <main id="top" class="shell" tabindex="-1">
+    <section id="place-home" class="place-home" aria-labelledby="home-title">
+      <div class="home-input">
+        <header>
+          <h1 id="home-title" data-l="homeTitle">选择拍摄地点</h1>
+          <p data-l="homeIntro">选一个马来西亚的地点，看看今晚几点适合拍星空。</p>
+        </header>
+        <form id="location-form" role="search" autocomplete="off">
+          <label class="visually-hidden" for="location-search" data-l="homeInput">地名或经纬度</label>
+          <div class="place-query">
+            <i data-i="search"></i>
+            <input type="text" id="location-search" role="combobox" aria-autocomplete="list" aria-controls="location-options" aria-expanded="false" enterkeyhint="search" spellcheck="false" autocomplete="off" data-l-placeholder="homePlaceholder" placeholder="输入地名或经纬度">
+            <button id="location-submit" type="submit" class="query-go" data-l-aria="checkTonight" aria-label="查看今晚"><span data-l="checkTonight">查看今晚</span><i data-i="arrow-right"></i></button>
+          </div>
+          <div id="location-options" role="listbox" data-l-aria="matchPlaces" aria-label="匹配地点"></div>
+          <p id="location-status" class="lookup-status" role="status"></p>
+        </form>
+        <div class="home-links">
+          <button id="use-current" type="button" class="underlink" aria-describedby="device-status"><i data-i="locate"></i><span id="use-current-label" data-l="useCurrent">使用当前位置</span></button>
+          <button type="button" class="underlink" data-open="map"><i data-i="map"></i><span data-l="pickOnMap">在地图上选点</span></button>
+        </div>
+        <p id="device-status" class="lookup-status" role="status" aria-atomic="true"></p>
+      </div>
+      <figure class="photograph">
+        <picture>
+          <source media="(max-width: 700px)" srcset="/assets/mersing-mobile.webp" width="864" height="1080">
+          <img id="field-photo" src="/assets/mersing-wide.webp" width="1920" height="813" fetchpriority="high" data-l-alt="photoAlt" alt="柔佛丰盛港 Pulau Mawar 的银河、海岸和水中的树影">
+        </picture>
+        <figcaption>
+          <div class="plate-credit">
+            <span class="photo-place" data-l="photoPlace">Pulau Mawar，柔佛</span>
+            <button id="photo-info" data-open="photo" data-l-title="photoTitle" title="查看摄影署名"><span data-l="photoBy">摄影 Chalizham</span></button>
+          </div>
+          <div class="plate-exposure"><time datetime="2020-06-20">20.06.2020</time><span class="exif" lang="en">18 mm · f/2.8 · 20 s · ISO 2000</span></div>
+        </figcaption>
+      </figure>
+      <section id="recent-places" class="recent-places" hidden><h2 data-l="recent">最近查看</h2><div id="recent-buttons"></div></section>
+    </section>
+    <div id="plan-view" hidden>
+      <section class="result-header" aria-labelledby="location-title">
+        <div class="locator">
+          <p id="region" class="region"></p>
+          <h1 id="location-title" tabindex="-1"><span id="place-zh"></span><span id="place-en" lang="ms" hidden></span></h1>
+          <div class="position-row"><span id="entry-coords" class="coordinates"></span>
+            <div class="hero-actions">
+              <button data-action="home" class="underlink" data-l="pick">换地点</button>
+              <button id="save-place" class="ico" data-l-title="saveTip" title="收藏这个地点" aria-pressed="false"><i data-i="bookmark"></i><span class="visually-hidden">收藏</span></button>
+            </div>
+          </div>
+          <div class="night-events"><h3 data-l="astroNight">天文暗夜</h3><div id="dark-values" class="event-values"></div></div>
+        </div>
+        <section class="summary" aria-labelledby="night-verdict">
+          <div class="forecast-line"><span id="weather-mark" class="visually-hidden"></span><span id="night-context"></span><button id="tonight-toggle" class="underlink" hidden data-l="backTonight">回到今晚</button></div>
+          <h2 id="night-verdict" aria-live="polite"></h2>
+          <div class="window-block" id="window-block">
+            <div class="summary-heading"><h3 id="window-heading"></h3><span id="window-duration" class="duration"></span></div>
+            <div id="window-answer" class="answer"></div>
+          </div>
+          <p class="explain" id="window-reason"></p>
+          <button id="retry-summary" class="underlink" hidden data-l="retryForecast">重新获取预报</button>
+          <div id="other-windows"></div>
+        </section>
+      </section>
+    <section id="planner" class="settings" data-l-aria="settings" aria-label="调整拍摄计划">
+      <div class="date-item field">
+        <label for="night-date" data-l="date">拍摄日期</label>
+        <div class="field-value"><span id="date-display"></span><i data-i="chevron-down"></i></div>
+        <input type="date" id="night-date" required data-l-aria="datePick" aria-label="选择拍摄日期">
+      </div>
+      <div class="target-item field">
+        <label for="target" data-l="target">拍摄目标</label>
+        <div class="select-wrap"><select id="target"><option value="galaxy" data-l="core">银河中心</option><option value="stars" data-l="stars">广角星空</option></select><i data-i="chevron-down"></i></div>
+      </div>
+      <button id="moon-toggle" type="button" role="switch" aria-checked="true"><span class="check-box" aria-hidden="true"></span><span data-l="noMoon">只看无月时段</span></button>
+      <button id="share" class="text-button"><i data-i="share-2"></i><span data-l="share">分享这份计划</span></button>
+    </section>
+
+    <div class="observations">
+      <section class="plot-panel" aria-labelledby="plot-title">
+        <div class="section-head"><div><h2 id="plot-title" data-l="timeline">整夜星历</h2><p id="plot-caption"></p></div><div class="chart-legend" id="line-legend"></div></div>
+        <div id="time-chart" class="time-chart"></div>
+        <div class="scrub-row"><label for="hour-slider" data-l="time">查看时刻</label><input id="hour-slider" type="range" min="0" max="13" step="1" value="7" data-l-aria="time" aria-label="查看时刻"><output id="scrub-label" for="hour-slider">01:00</output></div>
+      </section>
+      <section class="bearing-panel" aria-labelledby="bearing-title">
+        <div class="section-head"><div><h2 id="bearing-title" data-l="bearing">镜头朝向</h2><p id="bearing-caption"></p></div><span class="selected-time" id="bearing-time"></span></div>
+        <div class="bearing-body"><div id="compass" class="compass"></div><div class="bearing-rows" id="bearing-rows"></div></div>
+        <button class="finder-link underlink" data-open="finder"><i data-i="camera"></i><span data-l="openFinder">打开星空取景器</span><i data-i="arrow-up-right"></i></button>
+        <p class="bearing-foot" id="bearing-foot"></p>
+      </section>
+    </div>
+    <div class="detail-spread">
+      <section class="weather-panel" aria-labelledby="weather-title">
+        <div class="section-head"><div><h2 id="weather-title" data-l="weather">逐时天气</h2><p id="weather-source"></p></div><span class="selected-time" id="weather-time"></span></div>
+        <div id="weather-values" class="met-grid"></div>
+        <p id="weather-detail" class="detail-note"></p>
+      </section>
+      <section class="local-panel" aria-labelledby="local-title">
+        <div class="local-text"><h2 id="local-title" data-l="glow">地点光污染</h2>
+          <div id="glow-value" class="data-value"></div><p id="glow-note" class="detail-note"></p>
+          <button class="text-button" data-open="map"><span data-l="glowMap">看光污染地图</span><i data-i="arrow-up-right"></i></button>
+        </div>
+        <button class="map-thumbnail" data-open="map" data-l-aria="glowMap" aria-label="看光污染地图"><span id="mini-map" class="mini-map" aria-hidden="true"></span></button>
+      </section>
+    </div>
+    </div>
+  </main>
+  <footer class="shell"><span>Langit Atlas</span><span data-l="timezone">马来西亚时间 · MYT (UTC+8)</span><span class="bottom-actions"><button data-open="guide" data-l="sources">数据与方法</button></span></footer>
+
+
+  <dialog id="map-dialog" aria-labelledby="map-title" class="map-dialog">
+    <div class="dialog-head"><div><h2 id="map-title"><span data-l="mapPick">选择拍摄地点</span></h2><p><span data-l="mapIntro">搜索马来西亚地名、输入经纬度，或点选地图。</span></p></div><button class="ico close" data-l-aria="hideMap" aria-label="关闭地图"><i data-i="x"></i></button></div>
+    <div class="map-body"><div class="map-side">
+      <label for="place-search"><span data-l="search">地名或坐标</span></label><div class="search"><i data-i="search"></i><input id="place-search" type="search" autocomplete="off" data-l-placeholder="searchHint" placeholder="输入地名，或纬度、经度"></div>
+      <div id="place-results" class="results"></div><p class="search-status" id="search-status" role="status"></p>
+      <div class="map-choice"><div class="faint"><span data-l="selectedPlace">地图选点</span></div><strong id="choice-name"></strong><span id="choice-coords"></span><span id="choice-glow"></span></div>
+      <button id="use-point" class="accent-btn"><i data-i="check"></i><span data-l="usePlace">使用这个地点</span></button>
+    </div><div class="map-area"><div class="map-bar"><div role="group" data-l-aria="mapRegions" aria-label="地图区域"><button class="area-tab" data-region="west"><span data-l="west">马来半岛</span></button><button class="area-tab" data-region="east"><span data-l="east">沙巴与砂拉越</span></button></div><button class="ico" id="map-fit" data-l-aria="mapFit" aria-label="显示全区" data-l-title="mapFit" title="显示全区"><i data-i="scan"></i></button></div>
+      <div id="map-view" tabindex="0" role="group" data-l-aria="mapKeyboard" aria-label="可选点光污染地图。方向键移动中心，按 Enter 选择中心。"><svg id="map-svg" aria-hidden="true"></svg><div class="map-zoom"><button class="ico" id="map-plus" data-l-aria="mapPlus" aria-label="放大地图"><i data-i="plus"></i></button><button class="ico" id="map-minus" data-l-aria="mapMinus" aria-label="缩小地图"><i data-i="minus"></i></button></div></div>
+      <div class="map-legend" id="map-legend"></div>
+    </div></div>
+  </dialog>
+  <dialog id="finder-dialog" class="finder-dialog" aria-labelledby="finder-title">
+    <div class="dialog-head"><div><h2 id="finder-title" data-l="finderTitle">星空取景器</h2><p id="finder-location"></p></div><button type="button" class="ico close" data-l-aria="close" aria-label="关闭"><i data-i="x"></i></button></div>
+    <div class="finder-layout">
+      <div class="finder-main">
+        <div id="finder-frame" class="finder-frame" role="group" tabindex="0" data-l-aria="finderDrag" aria-label="拖动或按方向键调整取景方向">
+          <canvas id="finder-canvas" aria-hidden="true"></canvas>
+          <div class="finder-labels" id="finder-labels" aria-hidden="true"></div>
+          <span class="finder-cross" aria-hidden="true"></span>
+          <span class="finder-frame-mark tl" aria-hidden="true"></span><span class="finder-frame-mark tr" aria-hidden="true"></span><span class="finder-frame-mark bl" aria-hidden="true"></span><span class="finder-frame-mark br" aria-hidden="true"></span>
+          <p id="finder-fallback" role="status"></p>
+        </div>
+        <div class="finder-ruler"><span id="finder-heading"></span><span id="finder-fov"></span></div>
+        <p class="finder-help" data-l="finderHint">拖动或按方向键转向。星图按几何地平线绘制。</p>
+      </div>
+      <div class="finder-controls">
+        <div><label for="finder-hour" data-l="finderHour">取景时刻</label><output for="finder-hour" id="finder-time"></output>
+          <input id="finder-hour" type="range" min="0" max="13" step="1" data-l-aria="finderHour" aria-label="取景时刻"><div class="finder-times" aria-hidden="true"><span>18:00</span><span>07:00</span></div>
+        </div>
+        <fieldset><legend data-l="finderLens">全画幅等效焦距</legend><div class="lens-options" id="lens-options">
+          <button type="button" data-focal="14" aria-pressed="false">14 mm</button><button type="button" data-focal="24" aria-pressed="true">24 mm</button><button type="button" data-focal="35" aria-pressed="false">35 mm</button>
+        </div></fieldset>
+        <div class="finder-bodies" id="finder-bodies"></div>
+        <button type="button" id="finder-reset" class="underlink"><i data-i="crosshair"></i><span data-l="finderAim">对准拍摄目标</span></button>
+      </div>
+    </div>
+  </dialog>
+  <dialog id="info-dialog" class="info-dialog" aria-labelledby="info-title"><div class="dialog-head"><h2 id="info-title"></h2><button class="ico close" data-l-aria="close" aria-label="关闭"><i data-i="x"></i></button></div><div class="info-body" id="info-body"></div></dialog>
+  <div id="notice" role="status" class="notice"></div>
+  <svg class="svg-defs" aria-hidden="true"></svg>
+  <script type="module" src="/src/main.ts"></script>
+</body></html>
