@@ -51,23 +51,33 @@
         </div>
         <p id="device-status" class="lookup-status" role="status" aria-atomic="true"></p>
       </div>
-      <figure class="photograph">
-        <picture>
-          <source media="(max-width: 700px)" srcset="/assets/mersing-mobile.webp" width="864" height="1080">
-          <img id="field-photo" src="/assets/mersing-wide.webp" width="1920" height="813" fetchpriority="high" data-l-alt="photoAlt" alt="柔佛丰盛港 Pulau Mawar 的银河、海岸和水中的树影">
-        </picture>
-        <figcaption>
-          <div class="plate-credit">
-            <span class="photo-place" data-l="photoPlace">Pulau Mawar，柔佛</span>
-            <button id="photo-info" data-open="photo" data-l-title="photoTitle" title="查看摄影署名"><span data-l="photoBy">摄影 Chalizham</span></button>
+      <div id="home-visual">
+        <div id="observatory" data-scene="earth">
+          <div id="stage-interaction" role="group" tabindex="0" data-l-aria="sceneDrag">
+            <canvas id="stage-canvas" aria-hidden="true"></canvas>
+            <div id="stage-labels" aria-hidden="true"></div>
+            <span id="earth-label" aria-hidden="true" hidden>Malaysia</span>
           </div>
-          <div class="plate-exposure"><time datetime="2020-06-20">20.06.2020</time><span class="exif" lang="en">18 mm · f/2.8 · 20 s · ISO 2000</span></div>
-        </figcaption>
-      </figure>
+          <div class="stage-caption">
+            <div><strong id="stage-name"></strong><span id="stage-reading"></span></div>
+            <span class="scene-hint" data-l="globeHint"></span>
+            <button id="stage-reset" class="ico" data-l-aria="resetScene" data-l-title="resetScene"><i data-i="crosshair"></i></button>
+          </div>
+        </div>
+      </div>
       <section id="recent-places" class="recent-places" hidden><h2 data-l="recent">最近查看</h2><div id="recent-buttons"></div></section>
     </section>
     <div id="plan-view" hidden>
-      <section class="result-header" aria-labelledby="location-title">
+      <div class="plan-rail"><div class="rail-inner"><div id="plan-visual"></div>
+        <button class="sky-entry" data-open="finder" aria-controls="finder-dialog"><span data-l="openFinder">打开星空取景器</span><span id="sky-preview-time"></span><i data-i="arrow-up-right"></i></button>
+      </div></div>
+      <div class="field-notes">
+      <nav class="chapter-nav" data-l-aria="planner">
+        <button type="button" data-chapter="forecast" data-l="compareTitle"></button>
+        <button type="button" data-chapter="ephemeris" data-l="timeline"></button>
+        <button type="button" data-chapter="conditions" data-l="conditions"></button>
+      </nav>
+      <section id="forecast" class="result-header" aria-labelledby="location-title">
         <div class="locator">
           <p id="region" class="region"></p>
           <h1 id="location-title" tabindex="-1"><span id="place-zh"></span><span id="place-en" lang="ms" hidden></span></h1>
@@ -78,11 +88,6 @@
             </div>
           </div>
           <button class="local-reading" id="jump-glow" aria-controls="local-title"><span data-l="localGlow">此地光污染</span><strong id="glow-short">—</strong><i data-i="chevron-right"></i></button>
-          <button class="sky-entry" data-open="finder" aria-controls="finder-dialog">
-            <canvas id="sky-preview" aria-hidden="true"></canvas>
-            <span class="sky-entry-note" id="sky-preview-time"></span>
-            <span class="sky-entry-caption"><span data-l="skyOnDate">当晚星空</span><i data-i="arrow-up-right"></i></span>
-          </button>
         </div>
         <section class="night-compare" aria-labelledby="compare-title">
           <div class="compare-heading"><h2 id="compare-title" data-l="compareTitle">未来三晚</h2><span>MYT · UTC+8</span></div>
@@ -117,7 +122,7 @@
       <button id="share" class="text-button"><i data-i="share-2"></i><span data-l="share">分享这份计划</span></button>
     </section>
 
-    <div class="observations">
+    <div class="observations" id="ephemeris">
       <section class="plot-panel" aria-labelledby="plot-title">
         <div class="section-head"><div><h2 id="plot-title" data-l="timeline">整夜星历</h2><p id="plot-caption"></p></div><div class="chart-legend" id="line-legend"></div></div>
         <div id="time-chart" class="time-chart"></div>
@@ -130,7 +135,7 @@
         <p class="bearing-foot" id="bearing-foot"></p>
       </section>
     </div>
-    <div class="detail-spread">
+    <div class="detail-spread" id="conditions">
       <section class="weather-panel" aria-labelledby="weather-title">
         <div class="section-head"><div><h2 id="weather-title" data-l="weather">逐时天气</h2><p id="weather-source"></p></div><span class="selected-time" id="weather-time"></span></div>
         <div id="weather-values" class="met-grid"></div>
@@ -144,6 +149,7 @@
         <button class="map-thumbnail" data-open="map" data-l-aria="glowMap" aria-label="看光污染地图"><span id="mini-map" class="mini-map" aria-hidden="true"></span></button>
         <table class="readings-table"><caption data-l="glowScale">人工天光与自然天光之比</caption><thead><tr><th scope="col" data-l="ratioColumn">亮度比</th><th scope="col" data-l="meaningColumn">怎么读</th></tr></thead><tbody id="glow-scale"></tbody></table>
       </section>
+    </div>
     </div>
     </div>
   </main>
@@ -167,6 +173,8 @@
           <button class="ico" id="map-fit" data-l-aria="mapFit" data-l-title="mapFit" aria-label="显示全区" title="显示全区"><i data-i="scan"></i></button>
         </div>
         <div id="map-view" tabindex="0" role="group" data-l-aria="mapKeyboard" aria-label="光污染地图。方向键平移，加减号缩放，按 Enter 选择中心点。">
+          <svg id="map-base" aria-hidden="true"></svg>
+          <canvas id="map-light" aria-hidden="true"></canvas>
           <svg id="map-svg" aria-hidden="true"></svg>
           <div class="map-zoom"><button class="ico" id="map-plus" data-l-aria="mapPlus" aria-label="放大地图"><i data-i="plus"></i></button><button class="ico" id="map-minus" data-l-aria="mapMinus" aria-label="缩小地图"><i data-i="minus"></i></button></div>
         </div>

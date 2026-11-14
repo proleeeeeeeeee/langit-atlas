@@ -28,10 +28,10 @@ function segments(points: number[], colour: number) {
   return new LineSegments(geometry,material);
 }
 
-export function createSkyPlot(canvas: HTMLCanvasElement, labels: HTMLElement, lost: () => void, restored: () => void, redraw:()=>void): SkyPlot {
-  const renderer = new WebGLRenderer({canvas,antialias:true,alpha:false,powerPreference:'low-power'});
+export function createSkyPlot(canvas: HTMLCanvasElement, labels: HTMLElement, lost: () => void, restored: () => void, redraw:()=>void, shared?:WebGLRenderer): SkyPlot {
+  const renderer = shared ?? new WebGLRenderer({canvas,antialias:true,alpha:false,powerPreference:'low-power'});
   renderer.outputColorSpace = SRGBColorSpace;
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1,2));
+  if(!shared) renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1,2));
   renderer.localClippingEnabled = true;
   const scene = new Scene(), camera = new PerspectiveCamera(50,1.5,.01,3);
   const stars = new Group(); stars.matrixAutoUpdate = false;
@@ -99,8 +99,8 @@ export function createSkyPlot(canvas: HTMLCanvasElement, labels: HTMLElement, lo
     }
     trail.visible = positions.length > 0;
     if (!trail.visible) return;
-    if (!trail.geometry.hasAttribute('position')) {
-      const maxVertices = 2*Math.floor(points.length/2);
+    if (!trail.geometry.hasAttribute('position') || trail.geometry.getAttribute('position').count < positions.length/3) {
+      const maxVertices = Math.max(positions.length/3, 2*Math.floor(points.length/2));
       trail.geometry.setAttribute('position',new Float32BufferAttribute(new Float32Array(maxVertices*3),3));
     }
     const attribute = trail.geometry.getAttribute('position');
@@ -116,6 +116,7 @@ export function createSkyPlot(canvas: HTMLCanvasElement, labels: HTMLElement, lo
   });
   const matrix=new Matrix4(),background=new Color(), scratch=new Vector3();
   let previousSky='', lastWidth=0,lastHeight=0,previousColour: boolean | undefined;
+  let previousView='';
   function mark(index: number, name: string, az: number, alt: number) {
     const el = anchors[index];
     if (alt<0) { el.hidden=true; return; }
@@ -153,6 +154,9 @@ export function createSkyPlot(canvas: HTMLCanvasElement, labels: HTMLElement, lo
     }
     layers.update(view.figures,view.galaxy,frame.red);
     renderer.render(scene,camera);
+    const viewKey=[key,frame.subjectKey,frame.en,view.az,view.alt,view.focal,view.figures,view.galaxy,width,height].join(',');
+    if(viewKey===previousView)return;
+    previousView=viewKey;
     mark(0,frame.target.name,frame.target.az,frame.target.alt);
     mark(1,frame.moon.name,frame.moon.az,frame.moon.alt);
     const names=frame.en?['N','E','S','W']:['北','东','南','西'];
@@ -173,6 +177,6 @@ export function createSkyPlot(canvas: HTMLCanvasElement, labels: HTMLElement, lo
   canvas.addEventListener('webglcontextrestored',restored);
   return { draw, dispose() {
     canvas.removeEventListener('webglcontextlost',lost); canvas.removeEventListener('webglcontextrestored',restored);
-    layers.dispose();geometries.forEach(g=>g.dispose()); materials.forEach(m=>m.dispose()); renderer.dispose(); labels.replaceChildren();
+    layers.dispose();geometries.forEach(g=>g.dispose()); materials.forEach(m=>m.dispose()); if(!shared)renderer.dispose(); labels.replaceChildren();
   }};
 }

@@ -14,6 +14,15 @@
   let labelFont='';
   let baseReady=false,choice,region=regions[0],view=null,svgState=null,apply,drag=null,frame=null;
   let lastStatus='',lastStatusPlace=null;
+  let lightSurface,loadingSurface=false;
+  function drawSurface(surface){
+    if(lightSurface){lightSurface(surface);return;}
+    if(loadingSurface)return;
+    loadingSurface=true;
+    import('./sky/map-light').then(({mapLight})=>{
+      lightSurface=mapLight($('map-light'));queue();
+    }).catch(()=>{delete $('map-view').dataset.surface;});
+  }
   const coord=(lat,lon)=>Math.abs(lat).toFixed(3)+'° '+(lat<0?'S':'N')+'  ·  '+Math.abs(lon).toFixed(3)+'° '+(lon<0?'W':'E');
   const areaFor=(lat,lon)=>Number.isFinite(lat)&&Number.isFinite(lon)
     ?regions.find(r=>lat>=r.south&&lat<=r.north&&lon>=r.west&&lon<=r.east):undefined;
@@ -154,15 +163,20 @@
     prepare();svg.replaceChildren();
     const w=box.width,h=box.height,unit=box.unit;
     svg.setAttribute('viewBox','0 0 '+w+' '+h);
-    const clip=svg;const scene=node('g',{transform:'scale('+(1/unit)+') translate('+(-box.l)+' '+(-box.t)+')'},clip);
+    const base=small?svg:$('map-base');
+    if(!small){base.replaceChildren();base.setAttribute('viewBox','0 0 '+w+' '+h);}
+    const transform='scale('+(1/unit)+') translate('+(-box.l)+' '+(-box.t)+')';
+    const scene=node('g',{transform},base);
     const X=v=>(v-box.l)/unit,Y=v=>(y(v)-box.t)/unit;
     node('use',{href:'#geo-land'},scene);
     const r=pt&&areaFor(pt.lat,pt.lon);
     const overlays=small?[r].filter(Boolean):[region];
     for(const rg of overlays){
       node('image',{x:rg.west,y:y(rg.north),width:rg.east-rg.west,height:y(rg.south)-y(rg.north),href:(window.AtlasImages?.[rg.image]||'assets/'+rg.image),preserveAspectRatio:'none',class:'map-raster'},scene);
+      if(!small)drawSurface({url:'assets/'+rg.image,left:X(rg.west),top:Y(rg.north),width:(rg.east-rg.west)/unit,height:Y(rg.south)-Y(rg.north),viewportWidth:w,viewportHeight:h});
     }
-    for(const kind of (small?['border','river']:['border','river','road']))node('use',{href:'#geo-'+kind},scene);
+    const outlines=small?scene:node('g',{transform},svg);
+    for(const kind of (small?['border','river']:['border','river','road']))node('use',{href:'#geo-'+kind},outlines);
     if(!small)drawPlaces(svg,box,pt,X,Y);
     if(pt){
       const px=X(pt.lon),py=Y(pt.lat);

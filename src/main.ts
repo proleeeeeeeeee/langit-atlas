@@ -1,5 +1,6 @@
 import './styles.css';
 import './field.css';
+import './observatory.css';
 import './icons.js';
 import './atlas-geo.js';
 import './lang.js';

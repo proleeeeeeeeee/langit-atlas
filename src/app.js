@@ -4,13 +4,16 @@ import { describe } from './core/advice';
 import { createFinder } from './sky/controller';
 import { compareNights, showGlow } from './three-nights';
 import { skySubjects } from './sky/subjects';
-import { previewSky } from './sky/preview';
+import { observatory } from './sky/observatory';
 
 export function start(){
   const $=id=>document.getElementById(id);
   const N={...astronomy,forecast},G=window.AtlasGeo,C=window.AtlasCharts,M=window.AtlasMap,L=window.AtlasLang;
   const finder=createFinder(index=>hour(index));
-  const preview=previewSky();
+  const stage=observatory((lat,lon)=>{
+    if(!M.areaFor(lat,lon)){notice('请点选马来半岛、沙巴或砂拉越','Pick a point in Peninsular Malaysia, Sabah or Sarawak');return;}
+    M.open(M.guessed(+lat.toFixed(5),+lon.toFixed(5)),changePlace);
+  });
   const comparison=compareNights(date=>{
     if(date!==state.date||state.demo)chooseDate(date);
     const summary=$('night-verdict');summary.tabIndex=-1;summary.focus({preventScroll:true});
@@ -201,8 +204,9 @@ export function start(){
     C.drawChart($('time-chart'),plan,state.index);C.drawCompass($('compass'),p,h);
     const subjects=skySubjects(state.place.lat,state.place.lon,h.ms);
     const sky={lat:state.place.lat,lon:state.place.lon,place:M.nameOf(state.place),date:state.date,ms:h.ms,index:state.index,clock:slot,en:L.en,red:document.documentElement.dataset.night==='red',subjects,
+      atlasRegion:M.areaFor(state.place.lat,state.place.lon),glowRatio:light?.ratio,
       subjectKey:p.nameZh,nightEnd:plan.end,target:{name:p.name,alt:p.alt,az:p.az},moon:{name:t('月亮','Moon'),alt:h.moonAlt,az:h.moonAz}};
-    finder.update(sky);preview.update(sky);
+    finder.update(sky);stage.update(sky);
     $('bearing-rows').innerHTML=bearingRow(p.name,p.alt,p.az,'')+bearingRow(t('月亮','Moon'),h.moonAlt,h.moonAz,'lunar');
     const moon=[t(h.moonPhase,lunarPhases[h.moonPhase]||'Moon phase unavailable'),formatNumber(h.moonIllum,0,'%')+t(' 照明',' illuminated')].join(' · ');
     const moonEvent=[[plan.events.moonrise,t('月出','moonrise')],[plan.events.moonset,t('月落','moonset')]]
@@ -290,12 +294,12 @@ export function start(){
     finder.close();
     clearDevice();
     const hasPlace=!!state.place;
-    $('place-home').hidden=hasPlace;$('plan-view').hidden=!hasPlace;
+    $('place-home').hidden=hasPlace;$('plan-view').hidden=!hasPlace;stage.route(hasPlace);
     if(hasPlace){
       refresh();
       if(moveFocus)$('location-title').focus({preventScroll:true});
     }else{
-      request++;comparison.reset();preview.clear();clearTimeout(forecastRefresh);weather=null;plan=null;advice=null;light=null;
+      request++;comparison.reset();clearTimeout(forecastRefresh);weather=null;plan=null;advice=null;light=null;
       window.PlacePicker.reset();renderRecent();
       if(moveFocus)$('location-search').focus({preventScroll:true});
     }
@@ -332,8 +336,8 @@ export function start(){
   const noncommercial='https://creativecommons.org/licenses/by-nc/4.0/';
   function photoHTML(){
     return '<h3>'+t('柔佛丰盛港 Pulau Mawar','Pulau Mawar, Mersing, Johor')+'</h3><p>'+
-      t('Chalizham 摄于 2020 年 6 月 20 日。Sony ILCE-7M2，18 mm，f/2.8，20 秒，ISO 2000。桌面和手机封面分别从原片裁切，保留原色。',
-        'Photographed by Chalizham on 20 June 2020. Sony ILCE-7M2, 18 mm, f/2.8, 20 seconds, ISO 2000. The desktop and mobile covers use different crops of the original photograph in its original colours.')+
+      t('Chalizham 摄于 2020 年 6 月 20 日。Sony ILCE-7M2，18 mm，f/2.8，20 秒，ISO 2000。设备无法显示三维场景时，页面使用这张丰盛港的照片。',
+        'Photographed by Chalizham on 20 June 2020. Sony ILCE-7M2, 18 mm, f/2.8, 20 seconds, ISO 2000. A crop of this Mersing photograph appears when the device cannot render the 3D scene.')+
       '</p><p>'+links(photoLink,t('原始照片与作者','Original photograph and photographer'))+' · '+links(shareAlike,t('照片许可 CC BY-SA 4.0','Photograph licence · CC BY-SA 4.0'))+'</p>';
   }
   function guide(){
@@ -363,6 +367,7 @@ export function start(){
           '<p>After you choose a location, the planner fetches an hourly forecast from Open-Meteo and refreshes it about once an hour. The hourly weather section shows when it was retrieved. Cloud cover is the percentage of sky obscured. Rainfall is the total forecast for the following hour. When air temperature nears the dew point, your lens is more likely to fog. Coastal showers and local cloud bands can differ from the forecast.</p>')+
         '<p>'+links(N.sources.forecast,t('Open-Meteo 天气资料','Open-Meteo weather data'))+' · '+links(N.sources.terms,t('接口使用条款','API terms of use'))+' · '+links(N.sources.licence,t('天气数据 CC BY 4.0','Weather data · CC BY 4.0'))+(state.demo?' · '+links(N.sources.archive,t('该日期的归档预报','Archived forecast for this date')):'')+'</p>')+
       dt(t('底图、地名与照片署名','Map, place names and photo credits'),
+        '<p>'+links('https://science.nasa.gov/earth/earth-observatory/earth-at-night/maps/','NASA Earth Observatory · Black Marble 2016')+' — Joshua Stevens / Suomi NPP VIIRS / Miguel Román (NASA GSFC).</p>'+
         t('<p>马来西亚图幅经过裁切、量化与配色。地理轮廓、州界、道路和河流来自 Natural Earth，地点来自 GeoNames。</p>',
           '<p>The Malaysian map tiles have been cropped, quantised and colour-mapped. Natural Earth supplies the coastlines, state boundaries, roads and rivers. Place names come from GeoNames.</p>')+
         '<p>'+links('https://www.naturalearthdata.com/about/terms-of-use/',t('Natural Earth · 公有领域','Natural Earth · public domain'))+' · '+links('https://www.geonames.org/','GeoNames')+' · '+links('https://creativecommons.org/licenses/by/4.0/',t('地名 CC BY 4.0','Place names: CC BY 4.0'))+'</p>'+photoHTML());

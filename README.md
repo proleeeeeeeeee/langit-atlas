@@ -23,6 +23,8 @@ Use `npm run check` for TypeScript checks or `npm run build` to check and produc
 
 ## Data and credits
 
+One shared Three.js canvas follows the observing plan. Drag the night globe, compare dates against the local star field, and scroll through the ephemeris to the observing site's location on Earth. On the regional map, a separate orthographic camera draws the historical skyglow raster beneath the place labels. The globe uses the NASA Earth Observatory 2016 Black Marble composite by Joshua Stevens, with Suomi NPP VIIRS data from Miguel Román (NASA GSFC). [NASA imagery](https://science.nasa.gov/earth/earth-observatory/earth-at-night/maps/)
+
 - Open-Meteo supplies hourly weather forecasts. Astronomy Engine calculates sky positions and lunar events. [Forecast documentation](https://open-meteo.com/en/docs) · [Astronomy Engine](https://github.com/cosinekitty/astronomy)
 - Sky brightness comes from the Falchi et al. World Atlas, using 2014 night lights. The map notes include the model date, processing steps and licences for the atlas, place names and geographic layers. [Map credits](public/assets/atlas-sources.txt)
 - The viewfinder uses a 523-star subset of the HYG Stellar Database by David Nash (Astronexus). [Star catalogue credits](public/assets/STARS-CREDITS.txt)
