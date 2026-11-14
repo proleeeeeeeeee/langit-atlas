@@ -2,11 +2,13 @@
 
 马来西亚的星空摄影规划工具。输入地名、经纬度，或使用当前位置，查看当晚适合拍摄的时段、云量、月光与镜头朝向。界面支持简体中文和 English。
 
-点选地图上的地名就能使用该地点，也可以开关光污染图层查看底图。取景器中的虚线标出目标未来一小时的轨迹。选好方向和焦距，点「固定机位预演」可以逐小时查看星空怎样移过画面。
+选点后可比较今晚、明晚、后晚的拍摄窗口及窗口内的平均云量，点日期查看当晚的详细计划。地点光污染表显示人工与自然天光的亮度比，并标出所在区间。星图提供银河背景和十二组星座连线。选好方向和焦距后，固定机位预演可显示星空怎样逐小时移过画面。
 
 Choose a location in Malaysia to plan a night of astrophotography. The planner combines hourly cloud and rain forecasts with astronomical darkness, moonlight and a historical sky-brightness estimate. Tap a place name on the map to select it, or toggle the light pollution overlay to see the base map. In the viewfinder, a dashed line traces the subject’s next hour. Choose a 14, 24 or 35 mm full-frame equivalent lens and play the hourly sky preview with the camera held in place.
 
 **Project author** · [@proleeeeeeeeee](https://github.com/proleeeeeeeeee)
+
+The three-night table compares forecast-supported windows at one location. The skyglow scale marks the local artificial-to-natural brightness ratio. Explore twelve constellation figures and the Galactic band in the interactive chart, using the selected date, hour and coordinates.
 
 ## Local development
 

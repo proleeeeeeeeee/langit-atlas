@@ -13,7 +13,9 @@ export function createFinder(setHour: (index: number) => void) {
   const aim = byId<HTMLButtonElement>('finder-reset');
   const playback = byId<HTMLButtonElement>('finder-play');
   const lenses = [...dialog.querySelectorAll<HTMLButtonElement>('[data-focal]')];
-  const view: CameraView = { az: 180, alt: 20, focal: 24 };
+  const view: CameraView = { az: 180, alt: 20, focal: 24, figures:true,galaxy:true };
+  const picker=byId<HTMLSelectElement>('sky-object');
+  let selected='', optionKey='';
   let sky: SkyFrame | undefined;
   let plot: SkyPlot | undefined;
   let track = true, serial = 0, pendingFrame = 0;
@@ -23,8 +25,9 @@ export function createFinder(setHour: (index: number) => void) {
 
   function centre() {
     if (!sky) return;
-    view.az = wrap(sky.target.az);
-    view.alt = sky.target.alt < 0 ? 4 : clampTilt(sky.target.alt);
+    const subject=sky.subjects.find(s=>s.id===selected)??sky.target;
+    view.az = wrap(subject.az);
+    view.alt = subject.alt < 0 ? 4 : clampTilt(subject.alt);
   }
 
   function render() {
@@ -32,6 +35,17 @@ export function createFinder(setHour: (index: number) => void) {
     if (!sky || !dialog.open) return;
     const lang = sky.en;
     const t = (zh: string, en: string) => lang ? en : zh;
+    const key=sky.ms+'|'+sky.lat+'|'+sky.lon+'|'+lang+'|'+sky.subjectKey;
+    if(optionKey!==key){
+      const options=sky.subjects.slice().sort((a,b)=>b.alt-a.alt).map(s=>
+        new Option(s.names[lang?1:0]+' · '+Math.round(s.alt)+'°',s.id));
+      picker.replaceChildren(new Option(t('当前拍摄目标','Shooting subject'),''),...options);
+      picker.value=selected;optionKey=key;
+    }
+    const focus=sky.subjects.find(s=>s.id===selected)??sky.target;
+    byId('sky-object-position').textContent=(focus.alt<0?t('地平线下','Below horizon'):cardinal(focus.az,lang)+' '+Math.round(wrap(focus.az))%360+'°')+' · '+t('高度 ','Alt ')+Math.round(focus.alt)+'°';
+    byId<HTMLInputElement>('show-figures').disabled=status!=='ready';
+    byId<HTMLInputElement>('show-galaxy').disabled=status!=='ready';
     if (status === 'ready') plot?.draw(sky, view);
     frame.dataset.mode = status;
     frame.tabIndex = status === 'ready' ? 0 : -1;
@@ -107,11 +121,11 @@ export function createFinder(setHour: (index: number) => void) {
     if (!sky || dialog.open) return;
     dialog.showModal();
     const token = ++serial;
-    status = 'loading'; track = true; centre(); render();
+    status = 'loading'; selected='';picker.value='';track = true; centre(); render();
     try {
       const { createSkyPlot } = await import('./renderer');
       if (!dialog.open || token !== serial) return;
-      plot = createSkyPlot(canvas,labels,() => { status = 'failed'; stopPlayback(); schedule(); },() => { status = 'ready'; schedule(); });
+      plot = createSkyPlot(canvas,labels,() => { status = 'failed'; stopPlayback(); schedule(); },() => { status = 'ready'; schedule(); },schedule);
       status = 'ready';
     } catch {
       if (!dialog.open || token !== serial) return;
@@ -127,10 +141,22 @@ export function createFinder(setHour: (index: number) => void) {
   }
 
   const resize = new ResizeObserver(schedule); resize.observe(frame);
+  for(const [id,key] of [['show-figures','figures'],['show-galaxy','galaxy']] as const){
+    const checkbox=byId<HTMLInputElement>(id);
+    checkbox.addEventListener('change',()=>{view[key]=checkbox.checked;schedule();});
+  }
+  picker.addEventListener('change',()=>{
+    stopPlayback();selected=picker.value;track=true;
+    if(selected){
+      const key=selected==='galaxy'?'galaxy':'figures';
+      view[key]=true;byId<HTMLInputElement>(key==='galaxy'?'show-galaxy':'show-figures').checked=true;
+    }
+    centre();schedule();
+  });
   playback.addEventListener('click', togglePlayback);
   document.addEventListener('visibilitychange', () => { if (document.hidden) stopPlayback(); });
   slider.addEventListener('input', () => { stopPlayback(); setHour(Number(slider.value)); });
-  aim.addEventListener('click', () => { stopPlayback(); track = true; centre(); schedule(); });
+  aim.addEventListener('click', () => { stopPlayback(); selected='';picker.value='';track = true; centre(); schedule(); });
   for (const button of lenses) button.addEventListener('click', () => { view.focal = Number(button.dataset.focal); schedule(); });
   frame.addEventListener('pointerdown', event => {
     if (status !== 'ready' || !event.isPrimary || event.button !== 0) return;

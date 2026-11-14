@@ -1,6 +1,11 @@
 (function(){
   'use strict';
   const labels={
+    compareTitle:['未来三晚','The next three nights'],nightColumn:['拍摄夜','Night'],windowColumn:['建议时段','Shooting window'],cloudColumn:['时段云量','Window cloud'],
+    localGlow:['此地光污染','Local skyglow'],glowScale:['人工天光与自然天光之比','Artificial light relative to natural sky brightness'],
+    ratioColumn:['亮度比','Ratio'],meaningColumn:['怎么读','Reading the scale'],
+    layers:['星图图层','Sky layers'],figures:['星座连线','Constellations'],milkyWay:['银河星带','Milky Way'],
+    skyObject:['寻找天体','Find in the sky'],skyOnDate:['当晚星空','Explore the sky'],
     skip:['跳到主要内容','Skip to main content'],
     homeTitle:['选择拍摄地点','Choose your location'],
     homeIntro:['选一个马来西亚的地点，看看今晚几点适合拍星空。','Pick a spot in Malaysia to see when the sky will be dark and clear tonight.'],
@@ -13,7 +18,7 @@
     finderPlay:['固定机位预演','Play fixed-camera preview'],
     finderLens:['全画幅等效焦距','Full-frame equivalent'],
     finderDrag:['拖动或按方向键调整取景方向','Drag or use arrow keys to look around'],
-    finderHint:['拖动或按方向键转向。虚线表示目标随后一小时的轨迹。山体与建筑遮挡请以现场为准。','Drag or use arrow keys to look around. Dashes trace the subject’s next hour. Check the terrain and buildings at your spot.'],
+    finderHint:['拖动或按方向键转向。虚线是拍摄目标未来一小时的轨迹。银河图层标示位置与轮廓，现场可见度取决于暮光、云量及光污染。','Drag or use arrow keys to look around. Dashes trace the shooting subject’s next hour. The Milky Way layer shows its shape and position. Twilight, cloud and skyglow affect visibility.'],
     finderAim:['对准拍摄目标','Centre on subject'],
     useCurrent:['使用当前位置','Use my location'],
     pickOnMap:['在地图上选点','Choose on the map'],

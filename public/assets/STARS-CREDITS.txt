@@ -40,3 +40,13 @@ SHA-256, original hygdata_v41.csv
 d9f69fd86bbf90a4e4d52b4c5c53eacfa6dfc0bfdef85bfd94f095e0bebe4ebd
 SHA-256, bright-stars.json
 4e83cf8d5375cde4de5a5a184546977111a4de3e05b178960896ec1db08a6607
+
+Milky Way panorama: Deep Star Maps 2020, celestial coordinates, Milky Way background.
+NASA/Goddard Space Flight Center Scientific Visualization Studio, Ernie Wright.
+Gaia DR2: ESA/Gaia/DPAC. Rendered as a direction reference, with a local horizon mask.
+https://svs.gsfc.nasa.gov/4851/
+
+Twelve constellation figures selected from D3-Celestial by Olaf Frohn, based on IAU charts.
+J2000 equatorial coordinates retained. Chinese labels added; camera aim uses the centre of the figure stars.
+https://github.com/ofrohn/d3-celestial/blob/7e720a3de062059d4c5400a379146a601d9010e0/data/constellations.lines.json
+Refer to CELESTIAL-LICENSE.txt (BSD 3-Clause).

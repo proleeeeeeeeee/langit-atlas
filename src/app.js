@@ -2,11 +2,20 @@ import * as astronomy from './ephemeris.js';
 import { forecast } from './core/forecast';
 import { describe } from './core/advice';
 import { createFinder } from './sky/controller';
+import { compareNights, showGlow } from './three-nights';
+import { skySubjects } from './sky/subjects';
+import { previewSky } from './sky/preview';
 
 export function start(){
   const $=id=>document.getElementById(id);
   const N={...astronomy,forecast},G=window.AtlasGeo,C=window.AtlasCharts,M=window.AtlasMap,L=window.AtlasLang;
   const finder=createFinder(index=>hour(index));
+  const preview=previewSky();
+  const comparison=compareNights(date=>{
+    if(date!==state.date||state.demo)chooseDate(date);
+    const summary=$('night-verdict');summary.tabIndex=-1;summary.focus({preventScroll:true});
+    summary.closest('section').scrollIntoView({block:'start',behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'instant':'smooth'});
+  });
   const t=(zh,en)=>L.pick(zh,en);
   const lunarPhases={'新月':'New moon','娥眉月':'Waxing crescent','上弦月':'First quarter','盈凸月':'Waxing gibbous','满月':'Full moon','亏凸月':'Waning gibbous','下弦月':'Last quarter','残月':'Waning crescent'};
   const compassPoints={'北':'N','东北':'NE','东':'E','东南':'SE','南':'S','西南':'SW','西':'W','西北':'NW'};
@@ -139,17 +148,7 @@ export function start(){
     $('target').value=state.target;$('moon-toggle').setAttribute('aria-checked',String(state.noMoon));
     syncSaved();M.mini(p);
     const glow=light=G.lookup(p.lat,p.lon);
-    if(['idle','loading'].includes(G.state)){
-      text('glow-value',t('读取地图中…','Loading atlas…'));text('glow-note','');return;
-    }
-    if(glow){
-      const brightness=Number(glow.artificialMcd.toPrecision(2));
-      $('glow-value').innerHTML=String(Number(glow.totalRatio.toPrecision(2)))+' <small>'+t('倍自然暗空亮度','× natural sky brightness')+'</small>';
-      text('glow-note',t('天顶人工亮度约 '+brightness+' mcd/m²。基于 2014 年夜光的模型估算。','Estimated artificial brightness overhead: '+brightness+' mcd/m². Modelled from 2014 night lights.'));
-    }else{
-      $('glow-value').innerHTML='<span class="word">'+t('缺少可用估值','No estimate available')+'</span>';
-      text('glow-note',t('该格点缺少可解读的历史亮度。可继续按坐标查看天体位置。','The atlas has no usable sky-brightness estimate at this point. Star and Moon positions are still available.'));
-    }
+    showGlow(glow,['idle','loading'].includes(G.state));
   }
   function timeRange(w){
     const next=N.dateMY(w.end)!==state.date,startsNext=N.dateMY(w.start)!==state.date;
@@ -200,8 +199,10 @@ export function start(){
     $('line-legend').innerHTML='<span class="key">'+escape(p.name)+'</span><span class="key lunar">'+t('月亮','Moon')+'</span>';
     text('plot-caption',(state.target==='stars'?t(p.name+'作广角构图参照',p.name+' as a framing reference'):t('天体高度与逐时云量','Altitude and hourly cloud cover'))+' · MYT');
     C.drawChart($('time-chart'),plan,state.index);C.drawCompass($('compass'),p,h);
-    finder.update({lat:state.place.lat,lon:state.place.lon,place:M.nameOf(state.place),date:state.date,ms:h.ms,index:state.index,clock:slot,en:L.en,red:document.documentElement.dataset.night==='red',
-      subjectKey:p.nameZh,nightEnd:plan.end,target:{name:p.name,alt:p.alt,az:p.az},moon:{name:t('月亮','Moon'),alt:h.moonAlt,az:h.moonAz}});
+    const subjects=skySubjects(state.place.lat,state.place.lon,h.ms);
+    const sky={lat:state.place.lat,lon:state.place.lon,place:M.nameOf(state.place),date:state.date,ms:h.ms,index:state.index,clock:slot,en:L.en,red:document.documentElement.dataset.night==='red',subjects,
+      subjectKey:p.nameZh,nightEnd:plan.end,target:{name:p.name,alt:p.alt,az:p.az},moon:{name:t('月亮','Moon'),alt:h.moonAlt,az:h.moonAz}};
+    finder.update(sky);preview.update(sky);
     $('bearing-rows').innerHTML=bearingRow(p.name,p.alt,p.az,'')+bearingRow(t('月亮','Moon'),h.moonAlt,h.moonAz,'lunar');
     const moon=[t(h.moonPhase,lunarPhases[h.moonPhase]||'Moon phase unavailable'),formatNumber(h.moonIllum,0,'%')+t(' 照明',' illuminated')].join(' · ');
     const moonEvent=[[plan.events.moonrise,t('月出','moonrise')],[plan.events.moonset,t('月落','moonset')]]
@@ -240,6 +241,7 @@ export function start(){
     return 'Open-Meteo · '+weatherLabel();
   }
   function compute(){
+    comparison.update(state,light);
     plan=N.plan({lat:state.place.lat,lon:state.place.lon,date:state.date,target:state.target,noMoon:state.noMoon,weather});
     advice=describe(plan,{isTonight:state.date===tonight()&&!state.demo,light,now:Date.now()},N.criteria);
     const darkFrom=Math.max(plan.events.darkStart||plan.start,state.date===tonight()?Date.now():plan.start);
@@ -255,6 +257,7 @@ export function start(){
     if(!state.place)return;
     const id=++request;clearTimeout(forecastRefresh);
     const atlas=G.load();
+    comparison.load(state.place,tonight(),retry);
     fullUpdate();
     if(state.demo&&isDemoable(state)){
       weather=N.demoWeather();compute();await atlas;
@@ -292,7 +295,7 @@ export function start(){
       refresh();
       if(moveFocus)$('location-title').focus({preventScroll:true});
     }else{
-      request++;clearTimeout(forecastRefresh);weather=null;plan=null;advice=null;light=null;
+      request++;comparison.reset();preview.clear();clearTimeout(forecastRefresh);weather=null;plan=null;advice=null;light=null;
       window.PlacePicker.reset();renderRecent();
       if(moveFocus)$('location-search').focus({preventScroll:true});
     }
@@ -421,19 +424,23 @@ export function start(){
     }
     if(noticeLabels)text('notice',t(...noticeLabels));
   }
+  function chooseDate(date){
+    if(!validDate(date)){$('night-date').value=state.date;notice('请选择 1901 至 2099 年的有效日期','Choose a valid date between 1901 and 2099');return;}
+    state.date=date;state.demo=false;state.index=null;followWindow=true;syncRoute();refresh();
+  }
   function init(){
     L.init();icons();M.init();window.PlacePicker.init(changePlace);setNight(read('red',false),false);
     document.querySelector('.skip').onclick=e=>{e.preventDefault();$(state.place?'location-title':'location-search').focus();};
     $('lang-toggle').onclick=changeLanguage;
+    $('jump-glow').onclick=()=>{
+      const heading=$('local-title');heading.tabIndex=-1;heading.focus({preventScroll:true});
+      heading.scrollIntoView({block:'start',behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'instant':'smooth'});
+    };
     $('use-current').onclick=locateDevice;
     $('location-search').addEventListener('input',clearDevice);
     $('location-form').addEventListener('submit',clearDevice);
     $('night-toggle').onclick=()=>{setNight(document.documentElement.dataset.night!=='red',true);if(plan)renderHour();};
     $('night-date').min='1901-01-01';$('night-date').max='2099-12-31';
-    function chooseDate(date){
-      if(!validDate(date)){$('night-date').value=state.date;notice('请选择 1901 至 2099 年的有效日期','Choose a valid date between 1901 and 2099');return;}
-      state.date=date;state.demo=false;state.index=null;followWindow=true;syncRoute();refresh();
-    }
     $('night-date').onchange=e=>chooseDate(e.target.value);
     $('tonight-toggle').onclick=()=>chooseDate(tonight());
     $('target').onchange=e=>{state.target=e.target.value;followWindow=true;compute();syncRoute();};

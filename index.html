@@ -77,9 +77,21 @@
               <button id="save-place" class="ico" data-l-title="saveTip" title="收藏这个地点" aria-pressed="false"><i data-i="bookmark"></i><span class="visually-hidden">收藏</span></button>
             </div>
           </div>
-          <div class="night-events"><h3 data-l="astroNight">天文暗夜</h3><div id="dark-values" class="event-values"></div></div>
+          <button class="local-reading" id="jump-glow" aria-controls="local-title"><span data-l="localGlow">此地光污染</span><strong id="glow-short">—</strong><i data-i="chevron-right"></i></button>
+          <button class="sky-entry" data-open="finder" aria-controls="finder-dialog">
+            <canvas id="sky-preview" aria-hidden="true"></canvas>
+            <span class="sky-entry-note" id="sky-preview-time"></span>
+            <span class="sky-entry-caption"><span data-l="skyOnDate">当晚星空</span><i data-i="arrow-up-right"></i></span>
+          </button>
         </div>
-        <section class="summary" aria-labelledby="night-verdict">
+        <section class="night-compare" aria-labelledby="compare-title">
+          <div class="compare-heading"><h2 id="compare-title" data-l="compareTitle">未来三晚</h2><span>MYT · UTC+8</span></div>
+          <h3 id="compare-lead" aria-live="polite"></h3>
+          <table class="nights-table"><thead><tr><th scope="col" data-l="nightColumn">拍摄夜</th><th scope="col" data-l="windowColumn">建议时段</th><th scope="col" data-l="cloudColumn">时段云量</th></tr></thead><tbody id="compare-rows"></tbody></table>
+          <p id="compare-note" class="compare-note"></p>
+        </section>
+      </section>
+        <section class="summary selected-summary" aria-labelledby="night-verdict">
           <div class="forecast-line"><span id="weather-mark" class="visually-hidden"></span><span id="night-context"></span><button id="tonight-toggle" class="underlink" hidden data-l="backTonight">回到今晚</button></div>
           <h2 id="night-verdict" aria-live="polite"></h2>
           <div class="window-block" id="window-block">
@@ -89,8 +101,8 @@
           <p class="explain" id="window-reason"></p>
           <button id="retry-summary" class="underlink" hidden data-l="retryForecast">重新获取预报</button>
           <div id="other-windows"></div>
+          <div class="night-events"><h3 data-l="astroNight">天文暗夜</h3><div id="dark-values" class="event-values"></div></div>
         </section>
-      </section>
     <section id="planner" class="settings" data-l-aria="settings" aria-label="调整拍摄计划">
       <div class="date-item field">
         <label for="night-date" data-l="date">拍摄日期</label>
@@ -130,6 +142,7 @@
           <button class="text-button" data-open="map"><span data-l="glowMap">看光污染地图</span><i data-i="arrow-up-right"></i></button>
         </div>
         <button class="map-thumbnail" data-open="map" data-l-aria="glowMap" aria-label="看光污染地图"><span id="mini-map" class="mini-map" aria-hidden="true"></span></button>
+        <table class="readings-table"><caption data-l="glowScale">人工天光与自然天光之比</caption><thead><tr><th scope="col" data-l="ratioColumn">亮度比</th><th scope="col" data-l="meaningColumn">怎么读</th></tr></thead><tbody id="glow-scale"></tbody></table>
       </section>
     </div>
     </div>
@@ -184,6 +197,7 @@
         </div>
         <div class="finder-ruler"><span id="finder-heading"></span><span id="finder-fov"></span></div>
         <p class="finder-help" data-l="finderHint">拖动或按方向键转向。星图按几何地平线绘制。</p>
+        <p class="sky-credit"><a href="https://svs.gsfc.nasa.gov/4851/" target="_blank" rel="noreferrer">NASA SVS · ESA/Gaia/DPAC</a><span> / </span><a href="https://github.com/ofrohn/d3-celestial" target="_blank" rel="noreferrer">D3-Celestial</a></p>
       </div>
       <div class="finder-controls">
         <div class="finder-clock"><label for="finder-hour" data-l="finderHour">取景时刻</label><output for="finder-hour" id="finder-time"></output>
@@ -193,6 +207,11 @@
         <fieldset><legend data-l="finderLens">全画幅等效焦距</legend><div class="lens-options" id="lens-options">
           <button type="button" data-focal="14" aria-pressed="false">14 mm</button><button type="button" data-focal="24" aria-pressed="true">24 mm</button><button type="button" data-focal="35" aria-pressed="false">35 mm</button>
         </div></fieldset>
+        <fieldset class="sky-layers"><legend data-l="layers">星图图层</legend>
+          <label><input type="checkbox" id="show-figures" checked><span data-l="figures">星座连线</span></label>
+          <label><input type="checkbox" id="show-galaxy" checked><span data-l="milkyWay">银河星带</span></label>
+        </fieldset>
+        <div class="sky-object"><label for="sky-object" data-l="skyObject">寻找天体</label><select id="sky-object"></select><p id="sky-object-position"></p></div>
         <div class="finder-bodies" id="finder-bodies"></div>
         <button type="button" id="finder-reset" class="underlink"><i data-i="crosshair"></i><span data-l="finderAim">对准拍摄目标</span></button>
       </div>

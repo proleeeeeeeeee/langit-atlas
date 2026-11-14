@@ -8,6 +8,8 @@ import brightStars from './bright-stars.json';
 import { subjectTrail } from '../ephemeris.js';
 import { deg, fieldOfView } from './model';
 import type { CameraView, SkyFrame } from './model';
+import { skyLayers } from './layers';
+import figures from './figures.json';
 
 export interface SkyPlot {
   draw(frame: SkyFrame, view: CameraView): void;
@@ -26,14 +28,15 @@ function segments(points: number[], colour: number) {
   return new LineSegments(geometry,material);
 }
 
-export function createSkyPlot(canvas: HTMLCanvasElement, labels: HTMLElement, lost: () => void, restored: () => void): SkyPlot {
+export function createSkyPlot(canvas: HTMLCanvasElement, labels: HTMLElement, lost: () => void, restored: () => void, redraw:()=>void): SkyPlot {
   const renderer = new WebGLRenderer({canvas,antialias:true,alpha:false,powerPreference:'low-power'});
   renderer.outputColorSpace = SRGBColorSpace;
   renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1,2));
-  renderer.localClippingEnabled = false;
+  renderer.localClippingEnabled = true;
   const scene = new Scene(), camera = new PerspectiveCamera(50,1.5,.01,3);
   const stars = new Group(); stars.matrixAutoUpdate = false;
   scene.add(stars);
+  const layers=skyLayers(stars,redraw);
   const geometries: BufferGeometry[] = [], materials: (PointsMaterial | LineBasicMaterial)[] = [];
   const starMaterials: PointsMaterial[] = [];
   const buckets: number[][] = [[],[],[],[]];
@@ -107,7 +110,7 @@ export function createSkyPlot(canvas: HTMLCanvasElement, labels: HTMLElement, lo
   }
 
   // Position labels in screen space with the very same camera projection as the star field.
-  const anchors = ['target','moon','north','east','south','west','trail'].map(kind => {
+  const anchors = ['target','moon','north','east','south','west','trail','figure',...figures.map(()=>'figure')].map(kind => {
     const el = document.createElement('span'); el.className = 'sky-label sky-'+kind;
     el.hidden=true; labels.append(el); return el;
   });
@@ -148,17 +151,28 @@ export function createSkyPlot(canvas: HTMLCanvasElement, labels: HTMLElement, lo
       trail.material.color.setHex(frame.red?0xc18970:0xdfab8d);
       scene.background=background.setHex(frame.red?0x160c0a:0x091016); previousColour=frame.red;
     }
+    layers.update(view.figures,view.galaxy,frame.red);
     renderer.render(scene,camera);
     mark(0,frame.target.name,frame.target.az,frame.target.alt);
     mark(1,frame.moon.name,frame.moon.az,frame.moon.alt);
     const names=frame.en?['N','E','S','W']:['北','东','南','西'];
     for(let i=0;i<4;i++)mark(i+2,names[i],i*90,0);
     if (trailEnd) mark(6,frame.en?'+1 h':'+1 小时',trailEnd.az,trailEnd.alt); else anchors[6].hidden=true;
+    const reserved=anchors.slice(0,7).filter(el=>!el.hidden).map(el=>el.getBoundingClientRect());
+    frame.subjects.forEach((body,i)=>{
+      const el=anchors[7+i],isCore=body.id==='galaxy';
+      if ((isCore? !view.galaxy||frame.subjectKey==='银河中心' : !view.figures)) {el.hidden=true;return;}
+      mark(7+i,body.names[frame.en?1:0],body.az,body.alt);
+      if(el.hidden)return;
+      const box=el.getBoundingClientRect();
+      if(reserved.some(b=>box.left<b.right+4&&b.left<box.right+4&&box.top<b.bottom+3&&b.top<box.bottom+3))el.hidden=true;
+      else reserved.push(box);
+    });
   }
   canvas.addEventListener('webglcontextlost',lost);
   canvas.addEventListener('webglcontextrestored',restored);
   return { draw, dispose() {
     canvas.removeEventListener('webglcontextlost',lost); canvas.removeEventListener('webglcontextrestored',restored);
-    geometries.forEach(g=>g.dispose()); materials.forEach(m=>m.dispose()); renderer.dispose(); labels.replaceChildren();
+    layers.dispose();geometries.forEach(g=>g.dispose()); materials.forEach(m=>m.dispose()); renderer.dispose(); labels.replaceChildren();
   }};
 }

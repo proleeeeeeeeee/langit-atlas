@@ -18,12 +18,15 @@ export interface SkyFrame {
   red: boolean;
   target: BodyPosition;
   moon: BodyPosition;
+  subjects: {id:string;names:string[];az:number;alt:number}[];
 }
 
 export interface CameraView {
   az: number;
   alt: number;
   focal: number;
+  figures: boolean;
+  galaxy: boolean;
 }
 
 export const deg = Math.PI / 180;
