@@ -12,6 +12,8 @@ export interface SkyFrame {
   ms: number;
   index: number;
   clock: string;
+  subjectKey: string;
+  nightEnd: number;
   en: boolean;
   red: boolean;
   target: BodyPosition;

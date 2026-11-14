@@ -55,6 +55,18 @@ function horizontal(body, ms, observer) {
   const equator = A.Equator(body, at, observer, true, true);
   return A.Horizon(at, observer, equator.ra, equator.dec);
 }
+// One hour of local horizontal positions sampled every two minutes for the viewfinder.
+function subjectTrail(lat, lon, start, subject) {
+  const entry = catalogue.find(([,name]) => name === subject);
+  if (!entry) return [];
+  const observer = new A.Observer(lat, lon, 0);
+  const points = [];
+  for (let minutes = 0; minutes <= 60; minutes += 2) {
+    const {azimuth, altitude} = horizontal(entry[0], start + minutes * MINUTE, observer);
+    points.push({az: azimuth, alt: altitude});
+  }
+  return points;
+}
 function moonPhase(angle) {
   if (angle <= 3 || angle >= 357) return '新月';
   if (angle < 87) return '娥眉月';
@@ -230,4 +242,4 @@ function plan(input) {
 }
 
 
-export { example, criteria, sources, dateMY, time, compass, plan, demoWeather };
+export { example, criteria, sources, dateMY, time, compass, plan, demoWeather, subjectTrail };

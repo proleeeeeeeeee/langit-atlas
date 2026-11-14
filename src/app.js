@@ -201,7 +201,7 @@ export function start(){
     text('plot-caption',(state.target==='stars'?t(p.name+'作广角构图参照',p.name+' as a framing reference'):t('天体高度与逐时云量','Altitude and hourly cloud cover'))+' · MYT');
     C.drawChart($('time-chart'),plan,state.index);C.drawCompass($('compass'),p,h);
     finder.update({lat:state.place.lat,lon:state.place.lon,place:M.nameOf(state.place),date:state.date,ms:h.ms,index:state.index,clock:slot,en:L.en,red:document.documentElement.dataset.night==='red',
-      target:{name:p.name,alt:p.alt,az:p.az},moon:{name:t('月亮','Moon'),alt:h.moonAlt,az:h.moonAz}});
+      subjectKey:p.nameZh,nightEnd:plan.end,target:{name:p.name,alt:p.alt,az:p.az},moon:{name:t('月亮','Moon'),alt:h.moonAlt,az:h.moonAz}});
     $('bearing-rows').innerHTML=bearingRow(p.name,p.alt,p.az,'')+bearingRow(t('月亮','Moon'),h.moonAlt,h.moonAz,'lunar');
     const moon=[t(h.moonPhase,lunarPhases[h.moonPhase]||'Moon phase unavailable'),formatNumber(h.moonIllum,0,'%')+t(' 照明',' illuminated')].join(' · ');
     const moonEvent=[[plan.events.moonrise,t('月出','moonrise')],[plan.events.moonset,t('月落','moonset')]]

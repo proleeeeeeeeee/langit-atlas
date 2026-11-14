@@ -138,16 +138,38 @@
 
 
   <dialog id="map-dialog" aria-labelledby="map-title" class="map-dialog">
-    <div class="dialog-head"><div><h2 id="map-title"><span data-l="mapPick">选择拍摄地点</span></h2><p><span data-l="mapIntro">搜索马来西亚地名、输入经纬度，或点选地图。</span></p></div><button class="ico close" data-l-aria="hideMap" aria-label="关闭地图"><i data-i="x"></i></button></div>
-    <div class="map-body"><div class="map-side">
-      <label for="place-search"><span data-l="search">地名或坐标</span></label><div class="search"><i data-i="search"></i><input id="place-search" type="search" autocomplete="off" data-l-placeholder="searchHint" placeholder="输入地名，或纬度、经度"></div>
-      <div id="place-results" class="results"></div><p class="search-status" id="search-status" role="status"></p>
-      <div class="map-choice"><div class="faint"><span data-l="selectedPlace">地图选点</span></div><strong id="choice-name"></strong><span id="choice-coords"></span><span id="choice-glow"></span></div>
-      <button id="use-point" class="accent-btn"><i data-i="check"></i><span data-l="usePlace">使用这个地点</span></button>
-    </div><div class="map-area"><div class="map-bar"><div role="group" data-l-aria="mapRegions" aria-label="地图区域"><button class="area-tab" data-region="west"><span data-l="west">马来半岛</span></button><button class="area-tab" data-region="east"><span data-l="east">沙巴与砂拉越</span></button></div><button class="ico" id="map-fit" data-l-aria="mapFit" aria-label="显示全区" data-l-title="mapFit" title="显示全区"><i data-i="scan"></i></button></div>
-      <div id="map-view" tabindex="0" role="group" data-l-aria="mapKeyboard" aria-label="可选点光污染地图。方向键移动中心，按 Enter 选择中心。"><svg id="map-svg" aria-hidden="true"></svg><div class="map-zoom"><button class="ico" id="map-plus" data-l-aria="mapPlus" aria-label="放大地图"><i data-i="plus"></i></button><button class="ico" id="map-minus" data-l-aria="mapMinus" aria-label="缩小地图"><i data-i="minus"></i></button></div></div>
-      <div class="map-legend" id="map-legend"></div>
-    </div></div>
+    <div class="dialog-head">
+      <div><h2 id="map-title" tabindex="-1" data-l="mapPick">选择拍摄地点</h2><p data-l="mapIntro">搜索地名或坐标，也可以直接点选地图。</p></div>
+      <button class="ico close" data-l-aria="hideMap" aria-label="关闭地图"><i data-i="x"></i></button>
+    </div>
+    <div class="map-body">
+      <div class="map-search">
+        <label class="visually-hidden" for="place-search" data-l="search">地名或坐标</label>
+        <div class="search"><i data-i="search"></i><input id="place-search" type="search" autocomplete="off" data-l-placeholder="searchHint" placeholder="搜索地名或经纬度"></div>
+        <div id="place-results" class="results"></div><p class="search-status" id="search-status" role="status"></p>
+      </div>
+      <div class="map-area">
+        <div class="map-bar">
+          <div role="group" data-l-aria="mapRegions" aria-label="地图区域"><button class="area-tab" data-region="west" data-l="west">马来半岛</button><button class="area-tab" data-region="east" data-l="east">沙巴与砂拉越</button></div>
+          <button class="ico" id="map-fit" data-l-aria="mapFit" data-l-title="mapFit" aria-label="显示全区" title="显示全区"><i data-i="scan"></i></button>
+        </div>
+        <div id="map-view" tabindex="0" role="group" data-l-aria="mapKeyboard" aria-label="光污染地图。方向键平移，加减号缩放，按 Enter 选择中心点。">
+          <svg id="map-svg" aria-hidden="true"></svg>
+          <div class="map-zoom"><button class="ico" id="map-plus" data-l-aria="mapPlus" aria-label="放大地图"><i data-i="plus"></i></button><button class="ico" id="map-minus" data-l-aria="mapMinus" aria-label="缩小地图"><i data-i="minus"></i></button></div>
+        </div>
+        <div class="map-layer">
+          <button type="button" id="map-layer-toggle" role="switch" aria-checked="true" aria-controls="map-svg map-legend">
+            <span class="layer-switch" aria-hidden="true"></span><span data-l="mapLayer">光污染图层</span>
+          </button>
+          <span class="map-vintage" data-l="mapVintage">2014 年模型</span>
+        </div>
+        <div class="map-legend" id="map-legend" role="group" data-l-aria="mapLegend" aria-label="光污染图例"></div>
+      </div>
+      <div class="map-selection">
+        <div class="map-choice"><strong id="choice-name"></strong><span id="choice-coords"></span><span id="choice-glow"></span></div>
+        <button id="use-point" class="accent-btn"><span data-l="usePlace">查看此地今晚</span><i data-i="arrow-right"></i></button>
+      </div>
+    </div>
   </dialog>
   <dialog id="finder-dialog" class="finder-dialog" aria-labelledby="finder-title">
     <div class="dialog-head"><div><h2 id="finder-title" data-l="finderTitle">星空取景器</h2><p id="finder-location"></p></div><button type="button" class="ico close" data-l-aria="close" aria-label="关闭"><i data-i="x"></i></button></div>
@@ -164,8 +186,9 @@
         <p class="finder-help" data-l="finderHint">拖动或按方向键转向。星图按几何地平线绘制。</p>
       </div>
       <div class="finder-controls">
-        <div><label for="finder-hour" data-l="finderHour">取景时刻</label><output for="finder-hour" id="finder-time"></output>
+        <div class="finder-clock"><label for="finder-hour" data-l="finderHour">取景时刻</label><output for="finder-hour" id="finder-time"></output>
           <input id="finder-hour" type="range" min="0" max="13" step="1" data-l-aria="finderHour" aria-label="取景时刻"><div class="finder-times" aria-hidden="true"><span>18:00</span><span>07:00</span></div>
+          <button type="button" id="finder-play" disabled aria-controls="finder-hour finder-frame"><span class="play-symbol" aria-hidden="true"></span><span id="finder-play-label" data-l="finderPlay">固定机位预演</span></button>
         </div>
         <fieldset><legend data-l="finderLens">全画幅等效焦距</legend><div class="lens-options" id="lens-options">
           <button type="button" data-focal="14" aria-pressed="false">14 mm</button><button type="button" data-focal="24" aria-pressed="true">24 mm</button><button type="button" data-focal="35" aria-pressed="false">35 mm</button>

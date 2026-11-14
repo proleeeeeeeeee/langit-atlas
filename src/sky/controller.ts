@@ -11,12 +11,14 @@ export function createFinder(setHour: (index: number) => void) {
   const message = byId('finder-fallback');
   const slider = byId<HTMLInputElement>('finder-hour');
   const aim = byId<HTMLButtonElement>('finder-reset');
+  const playback = byId<HTMLButtonElement>('finder-play');
   const lenses = [...dialog.querySelectorAll<HTMLButtonElement>('[data-focal]')];
   const view: CameraView = { az: 180, alt: 20, focal: 24 };
   let sky: SkyFrame | undefined;
   let plot: SkyPlot | undefined;
   let track = true, serial = 0, pendingFrame = 0;
   let status: 'loading' | 'ready' | 'failed' = 'loading';
+  let playbackTimer: number | undefined;
   let drag: { id: number; x: number; y: number; az: number; alt: number } | undefined;
 
   function centre() {
@@ -42,6 +44,10 @@ export function createFinder(setHour: (index: number) => void) {
     byId('finder-time').textContent = sky.clock;
     slider.value = String(sky.index);
     slider.setAttribute('aria-valuetext', sky.clock);
+    playback.disabled = status !== 'ready';
+    const playing = playbackTimer !== undefined;
+    playback.dataset.playing = String(playing);
+    byId('finder-play-label').textContent = playing ? t('暂停预演','Pause preview') : t('固定机位预演','Play fixed-camera preview');
     byId('finder-heading').textContent = t('朝向 ','Bearing ') + cardinal(view.az,lang) + ' ' + (Math.round(wrap(view.az))%360) + '°  ·  ' + t('仰角 ','Tilt ') + Math.round(view.alt) + '°';
     byId('finder-fov').textContent = Math.round(fieldOfView(36,view.focal)) + '° × ' + Math.round(fieldOfView(24,view.focal)) + '°';
     for (const button of lenses) {
@@ -65,8 +71,32 @@ export function createFinder(setHour: (index: number) => void) {
     if (dialog.open && !pendingFrame) pendingFrame = requestAnimationFrame(render);
   }
 
+  function stopPlayback() {
+    if (playbackTimer === undefined) return;
+    window.clearInterval(playbackTimer);
+    playbackTimer = undefined;
+    schedule();
+  }
+
+  function togglePlayback() {
+    if (playbackTimer !== undefined) { stopPlayback(); return; }
+    if (!sky || status !== 'ready') return;
+    const lastHour = Number(slider.max);
+    // A tripod keeps its bearing and tilt as the sky moves through the frame.
+    track = false;
+    if (sky.index >= lastHour) setHour(0);
+    playbackTimer = window.setInterval(() => {
+      if (!sky || !dialog.open || document.hidden || status !== 'ready') { stopPlayback(); return; }
+      const next = Math.min(lastHour, sky.index+1);
+      setHour(next);
+      if (next === lastHour) stopPlayback();
+    }, 1200);
+    schedule();
+  }
+
   function release() {
     serial++;
+    stopPlayback();
     plot?.dispose(); plot = undefined;
     if (pendingFrame) cancelAnimationFrame(pendingFrame);
     pendingFrame = 0; drag = undefined;
@@ -81,7 +111,7 @@ export function createFinder(setHour: (index: number) => void) {
     try {
       const { createSkyPlot } = await import('./renderer');
       if (!dialog.open || token !== serial) return;
-      plot = createSkyPlot(canvas,labels,() => { status = 'failed'; schedule(); },() => { status = 'ready'; schedule(); });
+      plot = createSkyPlot(canvas,labels,() => { status = 'failed'; stopPlayback(); schedule(); },() => { status = 'ready'; schedule(); });
       status = 'ready';
     } catch {
       if (!dialog.open || token !== serial) return;
@@ -97,11 +127,14 @@ export function createFinder(setHour: (index: number) => void) {
   }
 
   const resize = new ResizeObserver(schedule); resize.observe(frame);
-  slider.addEventListener('input', () => setHour(Number(slider.value)));
-  aim.addEventListener('click', () => { track = true; centre(); schedule(); });
+  playback.addEventListener('click', togglePlayback);
+  document.addEventListener('visibilitychange', () => { if (document.hidden) stopPlayback(); });
+  slider.addEventListener('input', () => { stopPlayback(); setHour(Number(slider.value)); });
+  aim.addEventListener('click', () => { stopPlayback(); track = true; centre(); schedule(); });
   for (const button of lenses) button.addEventListener('click', () => { view.focal = Number(button.dataset.focal); schedule(); });
   frame.addEventListener('pointerdown', event => {
     if (status !== 'ready' || !event.isPrimary || event.button !== 0) return;
+    stopPlayback();
     drag = { id:event.pointerId, x:event.clientX, y:event.clientY, az:view.az, alt:view.alt };
     frame.setPointerCapture(event.pointerId); frame.focus({preventScroll:true});
   });
@@ -117,11 +150,11 @@ export function createFinder(setHour: (index: number) => void) {
   });
   frame.addEventListener('lostpointercapture', () => { drag = undefined; });
   frame.addEventListener('keydown', event => {
-    if (!event.key.startsWith('Arrow')) return;
+    if (status !== 'ready' || !event.key.startsWith('Arrow')) return;
     const step = event.shiftKey ? 10 : 2;
     const deltas: Record<string,[number,number]> = { ArrowLeft:[-step,0],ArrowRight:[step,0],ArrowUp:[0,step],ArrowDown:[0,-step] };
     const delta = deltas[event.key]; if (!delta) return;
-    event.preventDefault(); track = false;
+    event.preventDefault(); stopPlayback(); track = false;
     view.az = wrap(view.az + delta[0]); view.alt = clampTilt(view.alt + delta[1]); schedule();
   });
   dialog.addEventListener('close', () => { if (!dialog.open) release(); });

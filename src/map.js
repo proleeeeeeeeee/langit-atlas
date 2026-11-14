@@ -6,6 +6,12 @@
   const y=lat=>-merc(lat);
   const inv=value=>(2*Math.atan(Math.exp(-value*rad))-Math.PI/2)/rad;
   const regions=A.regions,land=document.querySelector('.svg-defs');
+  const overviewPlaces=new Set(['Kuala Lumpur','George Town','Ipoh','Johor Bahru','Kuantan','Kota Bharu','Mersing','Kuching','Kota Kinabalu','Sandakan','Tawau','Miri','Sibu','Bintulu','Labuan']);
+  const labelPlaces=A.places.filter(p=>p.population>20000||p.name==='Labuan').slice()
+    .sort((a,b)=>Number(overviewPlaces.has(b.name))-Number(overviewPlaces.has(a.name))||b.population-a.population);
+  const labelMeasure=document.createElement('canvas').getContext('2d');
+  const labelWidths=new Map();
+  let labelFont='';
   let baseReady=false,choice,region=regions[0],view=null,svgState=null,apply,drag=null,frame=null;
   let lastStatus='',lastStatusPlace=null;
   const coord=(lat,lon)=>Math.abs(lat).toFixed(3)+'° '+(lat<0?'S':'N')+'  ·  '+Math.abs(lon).toFixed(3)+'° '+(lon<0?'W':'E');
@@ -102,6 +108,48 @@
     const unit=Math.max((r.east-r.west)*1.04/width,(y(r.south)-y(r.north))*1.04/height)/pt.zoom;
     return {l:pt.cx-unit*width/2,t:pt.cy-unit*height/2,unit,width,height};
   }
+  function labelWidth(name){
+    if(!labelWidths.has(name))labelWidths.set(name,Math.ceil(labelMeasure?.measureText(name).width??(name.length*13)));
+    return labelWidths.get(name);
+  }
+  function drawPlaces(svg,box,pt,X,Y){
+    const {width:w,height:h}=box;
+    const font='500 13px '+getComputedStyle(svg).fontFamily;
+    if(font!==labelFont){
+      labelFont=font;labelWidths.clear();if(labelMeasure)labelMeasure.font=font;
+    }
+    const inset=6;
+    const occupied=[
+      {left:0,right:52,top:0,bottom:36},
+      {left:w-63,right:w,top:h-113,bottom:h},
+      {left:0,right:102,top:h-41,bottom:h}
+    ];
+    if(pt)occupied.push({left:X(pt.lon)-15,right:X(pt.lon)+15,top:Y(pt.lat)-15,bottom:Y(pt.lat)+15});
+    const collides=(a,b)=>a.left<b.right+3&&b.left<a.right+3&&a.top<b.bottom+3&&b.top<a.bottom+3;
+    const maxLabels=Math.max(4,Math.min(34,Math.floor(w*h/(view.zoom<1.5?15500:9200))));
+    let count=0;
+    for(const place of labelPlaces){
+      if(place.region!==region.id||pt?.id===place.id)continue;
+      if(view.zoom<1.5&&!overviewPlaces.has(place.name))continue;
+      const x=X(place.lon),y=Y(place.lat);
+      if(x<inset||x>w-inset||y<inset||y>h-inset)continue;
+      if(pt&&Math.hypot(x-X(pt.lon),y-Y(pt.lat))<14)continue;
+      const name=nameOf(place),width=labelWidth(name)+10;
+      const offsets=[[7,-10],[-width-7,-10],[7,-24],[-width-7,-24],[7,3],[-width-7,3]];
+      const anchor={left:x-2,right:x+2,top:y-2,bottom:y+2};
+      if(occupied.some(rect=>collides(anchor,rect)))continue;
+      for(const [dx,dy] of offsets){
+        const left=Math.round(x+dx),top=Math.round(y+dy),rect={left,top,right:left+width,bottom:top+20};
+        if(left<inset||top<inset||rect.right>w-inset||rect.bottom>h-inset||occupied.some(other=>collides(rect,other)))continue;
+        const group=node('g',{class:'map-place','data-place-id':place.id},svg);
+        node('circle',{cx:x,cy:y,r:2.3,class:'map-place-dot'},group);
+        node('rect',{x:left,y:top,width,height:20,rx:2,class:'map-label-plate'},group);
+        node('text',{x:left+5,y:top+14.5,class:'map-label'},group,name);
+        occupied.push(rect,anchor);count++;break;
+      }
+      if(count>=maxLabels)break;
+    }
+  }
   function renderMap(svg,box,pt,small){
     prepare();svg.replaceChildren();
     const w=box.width,h=box.height,unit=box.unit;
@@ -115,37 +163,27 @@
       node('image',{x:rg.west,y:y(rg.north),width:rg.east-rg.west,height:y(rg.south)-y(rg.north),href:(window.AtlasImages?.[rg.image]||'assets/'+rg.image),preserveAspectRatio:'none',class:'map-raster'},scene);
     }
     for(const kind of (small?['border','river']:['border','river','road']))node('use',{href:'#geo-'+kind},scene);
-    if(!small){
-      const placed=[];
-      const names=A.places.filter(p=>p.population>20000||p.name==='Mersing'||p.name==='Labuan').slice().sort((a,b)=>b.population-a.population);
-      for(const place of names){
-        const sx=X(place.lon),sy=Y(place.lat),name=nameOf(place);
-        if(sx<6||sx>w-40||sy<12||sy>h-8)continue;
-        const space=name.length*(!window.AtlasLang?.en&&place.zh?10:5.8)+8;
-        if(sx+space>w-2)continue;
-        if(placed.some(c=>Math.abs(sy-c.y)<17&&sx<c.x+c.w+7&&c.x<sx+space+7))continue;
-        if(pt&&Math.abs(sx-X(pt.lon))<14&&Math.abs(sy-Y(pt.lat))<12)continue;
-        placed.push({x:sx,y:sy,w:space});
-        node('circle',{cx:sx,cy:sy,r:1.7,fill:'var(--map-dot)'},svg);
-        node('text',{x:sx+4,y:sy+3,class:'map-label'},svg,name);
-      }
-    }
+    if(!small)drawPlaces(svg,box,pt,X,Y);
     if(pt){
       const px=X(pt.lon),py=Y(pt.lat);
       if(px>=0&&px<=w&&py>=0&&py<=h){
         const pin=node('g',{'data-selected-pin':''},svg);
-        node('circle',{cx:px,cy:py,r:small?8:9,fill:'var(--map-halo)',opacity:.76,stroke:'var(--map-dot)','stroke-width':1},pin);
-        node('circle',{cx:px,cy:py,r:3.3,fill:'var(--map-dot)'},pin);
+        node('circle',{cx:px,cy:py,r:small?8:10,fill:'var(--map-halo)',stroke:'var(--map-dot)','stroke-width':1.8},pin);
+        node('circle',{cx:px,cy:py,r:small?3:4,fill:'var(--map-dot)'},pin);
       }
     }
     if(!small){
-      node('text',{x:10,y:18,class:'map-label'},svg,t('↑ 北','↑ N'));
+      node('rect',{x:8,y:8,width:35,height:22,rx:2,class:'map-label-plate'},svg);
+      node('path',{d:'M16 24v-11l-3 5m3-5 3 5',stroke:'var(--map-dot)',fill:'none','stroke-width':1.5},svg);
+      node('text',{x:23,y:23,class:'map-key-label'},svg,t('北','N'));
       const desired=unit*75*110;
       const exponent=Math.pow(10,Math.floor(Math.log10(desired)));
       const barKm=(desired/exponent>=5?5:desired/exponent>=2?2:1)*exponent;
       const len=barKm/(Math.cos(inv(box.t+unit*h/2)*rad)*111.32*unit);
-      node('path',{d:'M12 '+(h-11)+'v3h'+len.toFixed(1)+'v-3',stroke:'var(--map-dot)',fill:'none'},svg);
-      node('text',{x:12,y:h-13,class:'map-label'},svg,t('约 '+barKm+' km','≈ '+barKm+' km'));
+      const scaleText=t('约 '+barKm+' km','≈ '+barKm+' km');
+      node('rect',{x:8,y:h-38,width:Math.max(len,labelWidth(scaleText))+10,height:30,rx:2,class:'map-label-plate'},svg);
+      node('path',{d:'M13 '+(h-17)+'v3h'+len.toFixed(1)+'v-3',stroke:'var(--map-dot)',fill:'none'},svg);
+      node('text',{x:13,y:h-21,class:'map-key-label'},svg,scaleText);
     }
   }
   function render(){
@@ -168,18 +206,21 @@
   function details(){
     $('use-point').disabled=!choice;
     if(!choice){
-      $('choice-name').textContent=t('尚未选点','No location selected');
-      $('choice-coords').textContent='';$('choice-glow').textContent='';
+      $('choice-name').textContent=t('在地图上点选拍摄位置','Tap the map to pick a location');
+      $('choice-coords').textContent='';$('choice-glow').textContent='';$('choice-glow').removeAttribute('title');
       return;
     }
     $('choice-name').textContent=nameOf(choice);
-    $('choice-coords').textContent=[stateOf(choice),coord(choice.lat,choice.lon)].filter(Boolean).join(' · ');
+    const district=stateOf(choice);
+    $('choice-coords').textContent=[district===nameOf(choice)?'':district,coord(choice.lat,choice.lon)].filter(Boolean).join(' · ');
     const glow=A.lookup(choice.lat,choice.lon);
     if(glow){
       const artificial=Number(glow.ratio.toPrecision(2)),total=Number(glow.totalRatio.toPrecision(2));
-      $('choice-glow').textContent=t('相对自然天光：人工亮度 '+artificial+' 倍，总亮度 '+total+' 倍。',
-        'Compared with natural sky brightness, artificial light is '+artificial+'× and total brightness is '+total+'×.');
+      const value=document.createElement('strong');value.textContent=t(artificial+' 倍',artificial+'×');
+      $('choice-glow').replaceChildren(t('人工天光约为自然天光的 ','Artificial glow is about '),value,t('',' the natural sky brightness.'));
+      $('choice-glow').title=t('含自然天光的总亮度约 '+total+' 倍。','Total brightness including the natural sky is about '+total+'×.');
     }else{
+      $('choice-glow').removeAttribute('title');
       $('choice-glow').textContent=t('此点没有可用的光污染估值。','No light pollution estimate is available at this point.');
     }
   }
@@ -240,43 +281,16 @@
     showStatus();$('place-results').replaceChildren();$('place-search').value='';
     choose(guessed(+lat.toFixed(5),+lon.toFixed(5)),false);
   }
-  function labelText(el,value){
-    if(!el)return;
-    const textNode=Array.from(el.childNodes).find(n=>n.nodeType===3&&n.textContent.trim());
-    if(textNode)textNode.textContent=value;
-    else if(el.querySelector(':scope > span'))el.querySelector(':scope > span').textContent=value;
-    else el.append(document.createTextNode(value));
-  }
-  function control(el,value){
-    if(!el)return;
-    el.setAttribute('aria-label',value);el.title=value;
-  }
   function relabel(){
     const dialog=$('map-dialog');
     if(!dialog)return;
-    const inside=selector=>dialog.querySelector(selector);
-    labelText($('map-title'),t('选择地点','Choose a location'));
-    labelText(inside('.dialog-head p'),t('搜索马来西亚地名、输入经纬度，或点选地图。','Search for a place in Malaysia, enter coordinates, or drop a pin on the map.'));
-    labelText(inside('label[for="place-search"]'),t('地名或坐标','Place or coordinates'));
-    $('place-search').placeholder=t('如 Mersing 或 2.43, 103.84','e.g. Mersing or 2.43, 103.84');
-    labelText(inside('.map-choice .faint'),t('已选地点','Selected location'));
-    labelText($('use-point'),t('查看此地今晚','Check this location'));
-    labelText(inside('[data-region="west"]'),t('马来半岛','Peninsular Malaysia'));
-    labelText(inside('[data-region="east"]'),t('沙巴与砂拉越','Sabah & Sarawak'));
-    const regionsControl=inside('.map-bar [role="group"]');
-    if(regionsControl)regionsControl.setAttribute('aria-label',t('地图区域','Map region'));
-    control(inside('.close'),t('关闭地图','Close map'));
-    control($('map-fit'),t('显示全区','Fit region to map'));
-    control($('map-plus'),t('放大地图','Zoom in'));
-    control($('map-minus'),t('缩小地图','Zoom out'));
-    $('map-view').setAttribute('aria-label',t('光污染地图。使用方向键平移，按加号或减号缩放，按 Enter 选择中心点。','Light pollution map. Use arrow keys to pan, plus or minus to zoom, and Enter to select the centre point.'));
-    const legend=$('map-legend'),title=document.createElement('span');
-    legend.setAttribute('role','group');legend.setAttribute('aria-label',t('光污染地图图例','Light pollution map legend'));
-    title.textContent=t('人工天光 / 自然天光','Artificial / natural sky brightness');legend.replaceChildren(title);
+    const legend=$('map-legend'),title=document.createElement('span'),ticks=document.createElement('div');
+    title.textContent=t('人工天光 / 自然天光','Artificial / natural sky brightness');
+    ticks.className='legend-ticks';legend.replaceChildren(title,ticks);
     for(const point of A.legend.filter(s=>[.1,1,10,100].includes(s.ratio))){
       const item=document.createElement('span'),chip=document.createElement('i');
-      chip.setAttribute('aria-hidden','true');chip.style.background=point.color;chip.style.opacity=Math.max(.4,point.alpha/255);
-      item.append(chip,point.ratio+'×');legend.append(item);
+      chip.setAttribute('aria-hidden','true');chip.style.background=point.color;chip.style.setProperty('--chip-opacity',point.alpha/255);
+      item.append(chip,point.ratio+'×');ticks.append(item);
     }
     if(dialog.open){
       details();
@@ -293,6 +307,13 @@
   }
   function init(){
     const canvas=$('map-view');
+    const layer=$('map-layer-toggle');
+    layer.onclick=()=>{
+      const visible=layer.getAttribute('aria-checked')!=='true';
+      layer.setAttribute('aria-checked',String(visible));
+      canvas.classList.toggle('basemap-only',!visible);
+      $('map-legend').hidden=!visible;
+    };
     $('map-plus').onclick=()=>zoom(1.7);$('map-minus').onclick=()=>zoom(1/1.7);$('map-fit').onclick=fit;
     document.querySelectorAll('[data-region]').forEach(btn=>btn.onclick=()=>{
       const next=regions.find(r=>r.id===btn.dataset.region);if(!next||next===region)return;
@@ -321,7 +342,8 @@
     };
     canvas.addEventListener('pointerdown',e=>{
       if(e.target.closest('button')||!svgState||e.button!==0||!e.isPrimary)return;
-      drag={x:e.clientX,y:e.clientY,cx:view.cx,cy:view.cy,moved:false};canvas.setPointerCapture(e.pointerId);
+      drag={x:e.clientX,y:e.clientY,cx:view.cx,cy:view.cy,moved:false,placeId:e.target.closest('.map-place')?.dataset.placeId};
+      canvas.setPointerCapture(e.pointerId);
     });
     canvas.addEventListener('pointermove',e=>{
       if(!drag||!e.isPrimary)return;const dx=e.clientX-drag.x,dy=e.clientY-drag.y;
@@ -329,8 +351,15 @@
       view.cx=drag.cx-dx*svgState.unit;view.cy=drag.cy-dy*svgState.unit;clampView();queue();
     });
     canvas.addEventListener('pointerup',e=>{
-      if(!drag||!e.isPrimary)return;const moved=drag.moved;drag=null;
-      if(!moved){const r=canvas.getBoundingClientRect();pick(e.clientX-r.left,e.clientY-r.top);}
+      if(!drag||!e.isPrimary)return;
+      const {moved,placeId}=drag;drag=null;
+      if(moved)return;
+      const place=placeId&&labelPlaces.find(p=>String(p.id)===placeId);
+      if(place){
+        $('place-search').value='';$('place-results').replaceChildren();showStatus();choose(place,false);
+      }else{
+        const r=canvas.getBoundingClientRect();pick(e.clientX-r.left,e.clientY-r.top);
+      }
     });
     canvas.addEventListener('pointercancel',()=>{drag=null});
     canvas.addEventListener('wheel',e=>{e.preventDefault();const r=canvas.getBoundingClientRect();zoom(e.deltaY<0?1.35:1/1.35,e.clientX-r.left,e.clientY-r.top);},{passive:false});
@@ -342,6 +371,7 @@
       if(e.key==='+'||e.key==='=')zoom(1.7);if(e.key==='-')zoom(1/1.7);
     });
     details();relabel();
+    document.fonts.ready.then(()=>{labelWidths.clear();queue();});
     new ResizeObserver(queue).observe(canvas);
   }
   function open(pt,chooseCallback){
@@ -351,7 +381,7 @@
     $('place-search').value='';$('place-results').replaceChildren();showStatus();
     $('map-dialog').showModal();fit();details();render();
     A.load().then(()=>{if($('map-dialog').open){details();render();}});
-    if(window.innerWidth>650)$('place-search').focus();else $('map-dialog').querySelector('.close').focus();
+    if(window.innerWidth>650)$('place-search').focus({preventScroll:true});else $('map-title').focus({preventScroll:true});
   }
   window.AtlasMap={init,open,mini,coord,areaFor,guessed,devicePoint,nameOf,stateOf,relabel,searchPlaces,resultText};
 })();

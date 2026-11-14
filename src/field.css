@@ -71,8 +71,9 @@ html[lang="en"] #place-home .home-input h1 { font: 400 clamp(56px, 5.8vw, 91px)/
 .sky-label { position: absolute; left: 50%; top: 50%; margin-left: 9px; margin-top: -18px; font: 12px/1.25 var(--sans); white-space: nowrap; color: var(--muted); text-shadow: 0 1px 3px #090d0f; }
 .sky-label.flip-x { transform: translateX(-100%); margin-left: -9px; }
 .sky-label.flip-y { margin-top: 8px; }
-.sky-target, .sky-moon { color: var(--accent); }
-.sky-target::before, .sky-moon::before { box-sizing: border-box; content: ""; position: absolute; top: 18px; left: -9px; width: 9px; height: 9px; transform: translate(-50%,-50%); border: 1px solid currentColor; border-radius: 50%; }
+.sky-target, .sky-moon, .sky-trail { color: var(--accent); }
+.sky-target::before, .sky-moon::before, .sky-trail::before { box-sizing: border-box; content: ""; position: absolute; top: 18px; left: -9px; width: 9px; height: 9px; transform: translate(-50%,-50%); border: 1px solid currentColor; border-radius: 50%; }
+.sky-trail::before { width: 5px; height: 5px; background: currentColor; }
 .sky-label.flip-x::before { left: auto; right: -9px; transform: translate(50%,-50%); }
 .sky-label.flip-y::before { top: -8px; }
 .sky-moon { color: var(--moon); }
@@ -91,6 +92,10 @@ html[lang="en"] #place-home .home-input h1 { font: 400 clamp(56px, 5.8vw, 91px)/
 #finder-time { display: block; margin-top: 6px; color: var(--ink); font: 400 clamp(22px, 2.4vw, 32px)/1.2 var(--sans); font-variant-numeric: tabular-nums; }
 #finder-hour { width: 100%; min-height: 30px; margin: 2px 0 0; accent-color: var(--accent); cursor: pointer; }
 .finder-times { padding: 0; font-size: 10px; color: var(--faint); }
+#finder-play { display: inline-flex; align-items: center; gap: 9px; min-height: 44px; color: var(--ink); font: 550 14px/1.3 var(--sans); text-align: start; }
+#finder-play:disabled { color: var(--faint); background: transparent; }
+.play-symbol { flex: none; width: 0; height: 0; border-block: 5px solid transparent; border-left: 9px solid currentColor; color: var(--accent); }
+[data-playing="true"] .play-symbol { width: 9px; height: 11px; border: 0; border-inline: 3px solid currentColor; }
 .finder-controls fieldset { padding: 0; border: 0; margin: 0; min-width: 0; }
 .lens-options { display: flex; gap: 3px; margin-top: 6px; }
 .lens-options button { min-height: 42px; flex: 1; padding: 0 6px; border: 1px solid var(--line); font-size: 13px; }

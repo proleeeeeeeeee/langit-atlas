@@ -5,6 +5,7 @@ import {
 } from 'three';
 import { Observer, Rotation_EQJ_HOR } from 'astronomy-engine';
 import brightStars from './bright-stars.json';
+import { subjectTrail } from '../ephemeris.js';
 import { deg, fieldOfView } from './model';
 import type { CameraView, SkyFrame } from './model';
 
@@ -65,12 +66,48 @@ export function createSkyPlot(canvas: HTMLCanvasElement, labels: HTMLElement, lo
     appendArc(horizon,horizontal(a,0),horizontal(a,1.0));
   }
   const gridLines = segments(grid,0x232b2d), horizonLine = segments(horizon,0x736b5b);
-  scene.add(gridLines,horizonLine);
-  geometries.push(gridLines.geometry,horizonLine.geometry);
-  materials.push(gridLines.material,horizonLine.material);
+  const trail = new LineSegments(new BufferGeometry(),new LineBasicMaterial({color:0xdfab8d}));
+  trail.frustumCulled = false;
+  trail.material.depthTest = false;
+  trail.renderOrder = 1;
+  scene.add(gridLines,horizonLine,trail);
+  geometries.push(gridLines.geometry,horizonLine.geometry,trail.geometry);
+  materials.push(gridLines.material,horizonLine.material,trail.material);
+
+  let trailEnd: {az:number; alt:number} | undefined;
+  let trailKey = '';
+  function updateTrail(frame: SkyFrame, key: string) {
+    const nextKey = key + '|' + frame.subjectKey + '|' + frame.nightEnd;
+    if (trailKey === nextKey) return;
+    trailKey = nextKey;
+    const points = frame.ms < frame.nightEnd ? subjectTrail(frame.lat,frame.lon,frame.ms,frame.subjectKey) : [];
+    trailEnd = points.at(-1);
+    const positions: number[] = [];
+    // Alternating ephemeris intervals form dashes. Clip each dash at the horizon.
+    for (let i=0; i+1<points.length; i+=2) {
+      const a = horizontal(points[i].az,points[i].alt);
+      const b = horizontal(points[i+1].az,points[i+1].alt);
+      if (a.y<0 && b.y<0) continue;
+      if ((a.y<0) !== (b.y<0)) {
+        const edge = a.clone().lerp(b,a.y/(a.y-b.y));
+        if (a.y<0) a.copy(edge); else b.copy(edge);
+      }
+      appendArc(positions,a,b);
+    }
+    trail.visible = positions.length > 0;
+    if (!trail.visible) return;
+    if (!trail.geometry.hasAttribute('position')) {
+      const maxVertices = 2*Math.floor(points.length/2);
+      trail.geometry.setAttribute('position',new Float32BufferAttribute(new Float32Array(maxVertices*3),3));
+    }
+    const attribute = trail.geometry.getAttribute('position');
+    attribute.array.set(positions);
+    attribute.needsUpdate = true;
+    trail.geometry.setDrawRange(0,positions.length/3);
+  }
 
   // Position labels in screen space with the very same camera projection as the star field.
-  const anchors = ['target','moon','north','east','south','west'].map(kind => {
+  const anchors = ['target','moon','north','east','south','west','trail'].map(kind => {
     const el = document.createElement('span'); el.className = 'sky-label sky-'+kind;
     el.hidden=true; labels.append(el); return el;
   });
@@ -95,6 +132,7 @@ export function createSkyPlot(canvas: HTMLCanvasElement, labels: HTMLElement, lo
     camera.aspect=width/height; camera.fov=fieldOfView(24,view.focal); camera.updateProjectionMatrix();
     camera.lookAt(horizontal(view.az,view.alt)); camera.updateMatrixWorld();
     const key=[frame.lat,frame.lon,frame.ms].join(',');
+    updateTrail(frame,key);
     if (key!==previousSky) {
       const { rot:r }=Rotation_EQJ_HOR(new Date(frame.ms),new Observer(frame.lat,frame.lon,0));
       // Astronomy Engine HOR is north, west, up. Camera space here is east, up, south.
@@ -107,6 +145,7 @@ export function createSkyPlot(canvas: HTMLCanvasElement, labels: HTMLElement, lo
       starMaterials.forEach((m,i)=>m.color.setHex(colours[i]));
       gridLines.material.color.setHex(frame.red?0x39241f:0x232c30);
       horizonLine.material.color.setHex(frame.red?0x96664f:0x897e62);
+      trail.material.color.setHex(frame.red?0xc18970:0xdfab8d);
       scene.background=background.setHex(frame.red?0x160c0a:0x091016); previousColour=frame.red;
     }
     renderer.render(scene,camera);
@@ -114,6 +153,7 @@ export function createSkyPlot(canvas: HTMLCanvasElement, labels: HTMLElement, lo
     mark(1,frame.moon.name,frame.moon.az,frame.moon.alt);
     const names=frame.en?['N','E','S','W']:['北','东','南','西'];
     for(let i=0;i<4;i++)mark(i+2,names[i],i*90,0);
+    if (trailEnd) mark(6,frame.en?'+1 h':'+1 小时',trailEnd.az,trailEnd.alt); else anchors[6].hidden=true;
   }
   canvas.addEventListener('webglcontextlost',lost);
   canvas.addEventListener('webglcontextrestored',restored);
