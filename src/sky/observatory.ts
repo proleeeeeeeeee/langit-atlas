@@ -14,7 +14,7 @@ export function observatory(pickPlace:(lat:number,lon:number)=>void) {
   let pick:((x:number,y:number)=>{lat:number;lon:number}|undefined)|undefined;
   let pointer:{id:number;x:number;y:number;startX:number;startY:number;moved:boolean}|null=null;
   const lang=()=>document.documentElement.lang==='en';
-  const isEarth=()=>scene==='earth'||scene==='conditions';
+  const isEarth=()=>scene==='earth'||(scene==='conditions'&&!frame?.skyOnly);
   function describe(){
     const en=lang();
     if(failed){
@@ -24,7 +24,7 @@ export function observatory(pickPlace:(lat:number,lon:number)=>void) {
         scene==='ephemeris'?(en?'Camera direction':'镜头朝向'):(en?'Local sky':'当地星空');
       reading.textContent=isEarth()?(en?'NASA Black Marble · 2016':'NASA 黑色大理石 · 2016'):
         frame?[frame.place,frame.date,frame.clock+' MYT'].join('  /  '):'';
-      if(scene==='conditions'&&frame){
+      if(scene==='conditions'&&frame&&!frame.skyOnly){
         const ratio=frame.glowRatio;
         reading.textContent=(en?'Skyglow model · 2014':'光污染模型 · 2014')+
           (ratio===undefined?'':'  /  '+Number(ratio.toPrecision(3))+'×');

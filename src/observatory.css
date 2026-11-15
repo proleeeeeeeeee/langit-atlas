@@ -111,3 +111,15 @@ body:has(dialog[open]) #stage-labels { visibility:hidden; }
   .field-notes [id] { scroll-margin-top:8px; }
 }
 @media (prefers-reduced-motion: reduce) { html { scroll-behavior:auto; } }
+.google-brand { color:white; font:400 13px/1.5 Roboto,var(--sans); white-space:nowrap; }
+.lookup-credit { display:flex; align-items:center; flex-wrap:wrap; gap:14px; margin-top:14px; border-top:1px solid var(--line); padding-top:10px; }
+.lookup-credit a, #place-credits a { color:var(--muted); font-size:12px; text-decoration:underline; }
+#lookup-status { min-height:1.5em; margin-top:10px; color:var(--muted); }
+#lookup-dialog .search { margin-top:6px; }
+#lookup-dialog .results { max-height:45svh; overflow:auto; }
+#lookup-dialog .result-btn { width:100%; }
+#google-source { margin-block:5px; }
+#google-source a { margin-inline-end:10px; text-decoration:underline; }
+body[data-google-place] .map-thumbnail,body[data-google-place] .local-text [data-open="map"] { display:none; }
+body[data-google-place] .scene-hint { display:none; }
+#lookup-dialog::backdrop { background:var(--base); }

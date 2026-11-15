@@ -46,6 +46,7 @@
           <p id="location-status" class="lookup-status" role="status"></p>
         </form>
         <div class="home-links">
+          <button type="button" class="underlink" data-place-lookup="location-search"><i data-i="search"></i><span data-l="googleLookup">Google 地点搜索</span></button>
           <button id="use-current" type="button" class="underlink" aria-describedby="device-status"><i data-i="locate"></i><span id="use-current-label" data-l="useCurrent">使用当前位置</span></button>
           <button type="button" class="underlink" data-open="map"><i data-i="map"></i><span data-l="pickOnMap">在地图上选点</span></button>
         </div>
@@ -88,6 +89,7 @@
             </div>
           </div>
           <button class="local-reading" id="jump-glow" aria-controls="local-title"><span data-l="localGlow">此地光污染</span><strong id="glow-short">—</strong><i data-i="chevron-right"></i></button>
+          <div id="google-source" hidden><a class="google-brand" target="_blank" rel="noreferrer">Google Maps</a><span id="place-credits"></span></div>
         </div>
         <section class="night-compare" aria-labelledby="compare-title">
           <div class="compare-heading"><h2 id="compare-title" data-l="compareTitle">未来三晚</h2><span>MYT · UTC+8</span></div>
@@ -153,7 +155,7 @@
     </div>
     </div>
   </main>
-  <footer class="shell"><span>Langit Atlas</span><span data-l="timezone">马来西亚时间 · MYT (UTC+8)</span><span class="bottom-actions"><button data-open="guide" data-l="sources">数据与方法</button></span></footer>
+  <footer class="shell"><span>Langit Atlas</span><span data-l="timezone">马来西亚时间 · MYT (UTC+8)</span><span class="bottom-actions"><button data-open="privacy" data-l="privacy">隐私</button> · <button data-open="guide" data-l="sources">数据与方法</button></span></footer>
 
 
   <dialog id="map-dialog" aria-labelledby="map-title" class="map-dialog">
@@ -166,6 +168,7 @@
         <label class="visually-hidden" for="place-search" data-l="search">地名或坐标</label>
         <div class="search"><i data-i="search"></i><input id="place-search" type="search" autocomplete="off" data-l-placeholder="searchHint" placeholder="搜索地名或经纬度"></div>
         <div id="place-results" class="results"></div><p class="search-status" id="search-status" role="status"></p>
+        <button type="button" class="underlink" data-place-lookup="place-search" data-l="googleLookup">Google 地点搜索</button>
       </div>
       <div class="map-area">
         <div class="map-bar">
@@ -189,6 +192,18 @@
       <div class="map-selection">
         <div class="map-choice"><strong id="choice-name"></strong><span id="choice-coords"></span><span id="choice-glow"></span></div>
         <button id="use-point" class="accent-btn"><span data-l="usePlace">查看此地今晚</span><i data-i="arrow-right"></i></button>
+      </div>
+    </div>
+  </dialog>
+  <dialog id="lookup-dialog" class="info-dialog" aria-labelledby="lookup-title">
+    <div class="dialog-head"><h2 id="lookup-title" data-l="findPlace">搜索马来西亚地点</h2><button type="button" class="ico close" data-l-aria="close"><i data-i="x"></i></button></div>
+    <div class="info-body">
+      <label for="lookup-input" data-l="poiLabel">地名、海滩或营地</label>
+      <div class="search"><i data-i="search"></i><input type="search" id="lookup-input" autocomplete="off" maxlength="130" enterkeyhint="search" aria-controls="lookup-options"></div>
+      <p id="lookup-status" role="status"></p><div id="lookup-options" class="results"></div>
+      <div class="lookup-credit"><span class="google-brand" translate="no">Google Maps</span>
+        <a href="https://www.google.com/intl/en/help/terms_maps/" target="_blank" rel="noreferrer" data-l="mapsTerms">地图条款</a>
+        <a href="https://policies.google.com/privacy" target="_blank" rel="noreferrer" data-l="privacy">隐私</a>
       </div>
     </div>
   </dialog>

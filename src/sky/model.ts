@@ -16,6 +16,7 @@ export interface SkyFrame {
   nightEnd: number;
   en: boolean;
   red: boolean;
+  skyOnly?:boolean;
   atlasRegion?: {west:number;east:number;north:number;south:number;image:string};
   glowRatio?: number;
   target: BodyPosition;

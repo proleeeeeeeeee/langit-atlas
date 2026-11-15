@@ -23,6 +23,8 @@ Use `npm run check` for TypeScript checks or `npm run build` to check and produc
 
 ## Data and credits
 
+The location search uses Google Places API (New) Autocomplete, restricted to Malaysia. Selecting a suggestion requests its coordinates with Place Details Essentials. Set the server-only `GOOGLE_PLACES_API_KEY` in Vercel and enable Places API (New) in the associated Google Cloud project. Run the API and frontend together with `vercel dev`. With a plain Vite server or if Google is unavailable, the local gazetteer and coordinate search remain available. Bookmarks and share links for Google locations use place IDs and the user's search text. The original map picker uses independent GeoNames and Natural Earth data.
+
 One shared Three.js canvas follows the observing plan. Drag the night globe, compare dates against the local star field, and scroll through the ephemeris to the observing site's location on Earth. On the regional map, a separate orthographic camera draws the historical skyglow raster beneath the place labels. The globe uses the NASA Earth Observatory 2016 Black Marble composite by Joshua Stevens, with Suomi NPP VIIRS data from Miguel Román (NASA GSFC). [NASA imagery](https://science.nasa.gov/earth/earth-observatory/earth-at-night/maps/)
 
 - Open-Meteo supplies hourly weather forecasts. Astronomy Engine calculates sky positions and lunar events. [Forecast documentation](https://open-meteo.com/en/docs) · [Astronomy Engine](https://github.com/cosinekitty/astronomy)

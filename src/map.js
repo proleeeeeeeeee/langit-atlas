@@ -43,6 +43,7 @@
     return p;
   }
   function nameOf(pt){
+    if(pt?.source==='google')return pt.name||pt.userLabel||t('已收藏的地点','Saved location');
     if(pt?.source==='device'){
       if(pt.nearZh&&pt.nearEn)return t(pt.nearZh+'附近','Near '+pt.nearEn);
       return t('定位点','Located point');
@@ -338,6 +339,9 @@
     $('place-search').onkeydown=e=>{
       if(e.isComposing||e.keyCode===229)return;
       const results=$('place-results').querySelectorAll('button');
+      if(e.key==='Enter' && !results.length && searchPlaces($('place-search').value).status==='none'){
+        e.preventDefault();document.querySelector('[data-place-lookup="place-search"]').click();return;
+      }
       if(e.key==='Enter'&&results.length){
         e.preventDefault();
         if(results.length===1)results[0].click();else{showStatus('choose');results[0].focus();}

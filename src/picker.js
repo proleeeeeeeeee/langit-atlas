@@ -1,9 +1,9 @@
-// Location-first entry. A selection is handed to the caller once, with no network request.
+// Local suggestions and coordinates stay available alongside the online place search.
 (() => {
   'use strict';
   const map = window.AtlasMap;
   const t = (zh,en) => window.AtlasLang?.pick(zh,en) ?? zh;
-  let form, input, list, status, submitControl, onPick;
+  let form, input, list, status, submitControl, onPick, onLookup;
   let matches = [], active = -1, expanded = false, message = '';
 
   function announce(key) {
@@ -83,6 +83,9 @@
     event.preventDefault();
     if (expanded && active >= 0) { accept(matches[active]); return; }
     const found = query(true);
+    if(input.value.trim().length>=2 && !['outside','invalid'].includes(found.status) && !found.places[0]?.custom){
+      closeList();onLookup(input.value.trim());return;
+    }
     if (found.places.length === 1 && !found.hasMore) { accept(found.places[0]); return; }
     if (found.places.length > 1) announce('choose');
     input.focus({preventScroll:true});
@@ -117,9 +120,9 @@
     if (!form) return;
     input.value = ''; closeList(); announce('');
   }
-  function init(callback) {
+  function init(callback,lookup) {
     if (typeof callback !== 'function') throw new TypeError('PlacePicker.init requires a selection callback');
-    onPick = callback;
+    onPick = callback;onLookup=lookup;
     if (form) return;
     form = document.getElementById('location-form');
     input = document.getElementById('location-search');

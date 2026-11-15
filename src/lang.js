@@ -1,6 +1,8 @@
 (function(){
   'use strict';
   const labels={
+    googleLookup:['Google 地点搜索','Search Google Maps'],findPlace:['搜索马来西亚地点','Find a place in Malaysia'],
+    poiLabel:['地名、海滩或营地','Place, beach or campsite'],mapsTerms:['地图条款','Maps terms'],privacy:['隐私','Privacy'],
     compareTitle:['未来三晚','The next three nights'],nightColumn:['拍摄夜','Night'],windowColumn:['建议时段','Shooting window'],cloudColumn:['时段云量','Window cloud'],
     localGlow:['此地光污染','Local skyglow'],glowScale:['人工天光与自然天光之比','Artificial light relative to natural sky brightness'],
     ratioColumn:['亮度比','Ratio'],meaningColumn:['怎么读','Reading the scale'],

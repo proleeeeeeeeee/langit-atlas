@@ -5,11 +5,13 @@ import { createFinder } from './sky/controller';
 import { compareNights, showGlow } from './three-nights';
 import { skySubjects } from './sky/subjects';
 import { observatory } from './sky/observatory';
+import { googleLookup,isGoogle,resolvePlace,storedPlace } from './google-places';
 
 export function start(){
   const $=id=>document.getElementById(id);
   const N={...astronomy,forecast},G=window.AtlasGeo,C=window.AtlasCharts,M=window.AtlasMap,L=window.AtlasLang;
   const finder=createFinder(index=>hour(index));
+  const searchGoogle=googleLookup(changePlace);
   const stage=observatory((lat,lon)=>{
     if(!M.areaFor(lat,lon)){notice('请点选马来半岛、沙巴或砂拉越','Pick a point in Peninsular Malaysia, Sabah or Sarawak');return;}
     M.open(M.guessed(+lat.toFixed(5),+lon.toFixed(5)),changePlace);
@@ -36,11 +38,12 @@ export function start(){
   const freshPlan=()=>({place:null,date:tonight(),target:'stars',noMoon:true,index:null,demo:false});
   function fromURL(){
     const s=freshPlan(),q=new URLSearchParams(location.hash.startsWith('#plan?')?location.hash.slice(5):location.search);
-    if(!q.has('lat')||!q.has('lon')||!q.get('lat')?.trim()||!q.get('lon')?.trim())return s;
+    const googleRef={source:'google',googleId:q.get('gplace'),userLabel:(q.get('q')||'').slice(0,130)};
+    if(!isGoogle(googleRef)&&(!q.get('lat')?.trim()||!q.get('lon')?.trim()))return s;
     const lat=Number(q.get('lat')),lon=Number(q.get('lon')),date=q.get('date')||s.date;
-    if(!Number.isFinite(lat)||!Number.isFinite(lon)||!M.areaFor(lat,lon)||!validDate(date))return s;
+    if(!validDate(date)||(!isGoogle(googleRef)&&(!Number.isFinite(lat)||!Number.isFinite(lon)||!M.areaFor(lat,lon))))return s;
     const p=G.places.find(p=>String(p.id)===q.get('place')&&Math.hypot(p.lat-lat,p.lon-lon)<.008);
-    s.place=p?{...p,lat,lon}:q.get('point')==='device'?M.devicePoint(lat,lon):M.guessed(lat,lon);
+    s.place=isGoogle(googleRef)?googleRef:p?{...p,lat,lon}:q.get('point')==='device'?M.devicePoint(lat,lon):M.guessed(lat,lon);
     s.date=date;s.target=q.get('target')==='galaxy'?'galaxy':'stars';s.noMoon=q.get('moon')!=='allow';
     const h=q.get('h');if(h!==null&&/^\d{1,2}$/.test(h)&&+h<=13)s.index=Number(h);
     s.demo=q.get('archive')==='1'&&isDemoable(s);
@@ -88,7 +91,9 @@ export function start(){
   function routeURL(includeHour){
     const url=new URL(location.href);url.search='';url.hash='';
     if(!state.place){if(url.protocol!=='file:')url.searchParams.set('lang',L.code);return url.toString();}
-    const p=state.place,q=new URLSearchParams({lat:p.lat.toFixed(5),lon:p.lon.toFixed(5),date:state.date,target:state.target,moon:state.noMoon?'below':'allow',lang:L.code});
+    const p=state.place,q=new URLSearchParams({date:state.date,target:state.target,moon:state.noMoon?'below':'allow',lang:L.code});
+    if(isGoogle(p)){q.set('gplace',p.googleId);if(p.userLabel)q.set('q',p.userLabel);}
+    else{q.set('lat',p.lat.toFixed(5));q.set('lon',p.lon.toFixed(5));}
     if(includeHour&&Number.isInteger(state.index))q.set('h',String(state.index));
     if(p.id)q.set('place',p.id);
     if(p.source==='device')q.set('point','device');
@@ -130,8 +135,9 @@ export function start(){
     clearTimeout(noticeTimer);noticeLabels=[zh,en];text('notice',t(zh,en));$('notice').classList.add('show');
     noticeTimer=setTimeout(()=>{noticeLabels=null;$('notice').classList.remove('show');text('notice','');},2800);
   }
-  function bookmarks(){const list=read('places',[]);return Array.isArray(list)?list.filter(p=>p&&M.areaFor(p.lat,p.lon)):[];}
-  const atSame=(a,b)=>Math.abs(a.lat-b.lat)<.00005&&Math.abs(a.lon-b.lon)<.00005;
+  const validStored=p=>p&&(isGoogle(p)||M.areaFor(p.lat,p.lon));
+  function bookmarks(){const list=read('places',[]);return Array.isArray(list)?list.filter(validStored):[];}
+  const atSame=(a,b)=>isGoogle(a)||isGoogle(b)?isGoogle(a)&&a.googleId===b.googleId:Math.abs(a.lat-b.lat)<.00005&&Math.abs(a.lon-b.lon)<.00005;
   function syncSaved(){
     if(!state.place)return;
     const saved=bookmarks().some(p=>atSame(p,state.place));
@@ -149,7 +155,15 @@ export function start(){
     text('entry-coords',M.coord(p.lat,p.lon)+accuracy);
     const input=$('night-date');input.value=state.date;text('date-display',displayDate(state.date));
     $('target').value=state.target;$('moon-toggle').setAttribute('aria-checked',String(state.noMoon));
-    syncSaved();M.mini(p);
+    syncSaved();M.mini(isGoogle(p)?null:p);
+    $('google-source').hidden=!isGoogle(p);
+    if(isGoogle(p)){
+      $('google-source').querySelector('a').href='https://www.google.com/maps/search/?'+new URLSearchParams({api:'1',query:M.nameOf(p),query_place_id:p.googleId});
+      const host=$('place-credits');host.replaceChildren();
+      for(const credit of p.credits||[]){if(!credit.name)continue;
+        const link=document.createElement('a');link.textContent=credit.name;
+        if(/^https?:\/\//i.test(credit.uri)){link.href=credit.uri;link.target='_blank';link.rel='noreferrer';}host.append(link);}
+    }
     const glow=light=G.lookup(p.lat,p.lon);
     showGlow(glow,['idle','loading'].includes(G.state));
   }
@@ -204,7 +218,7 @@ export function start(){
     C.drawChart($('time-chart'),plan,state.index);C.drawCompass($('compass'),p,h);
     const subjects=skySubjects(state.place.lat,state.place.lon,h.ms);
     const sky={lat:state.place.lat,lon:state.place.lon,place:M.nameOf(state.place),date:state.date,ms:h.ms,index:state.index,clock:slot,en:L.en,red:document.documentElement.dataset.night==='red',subjects,
-      atlasRegion:M.areaFor(state.place.lat,state.place.lon),glowRatio:light?.ratio,
+      skyOnly:isGoogle(state.place),atlasRegion:M.areaFor(state.place.lat,state.place.lon),glowRatio:light?.ratio,
       subjectKey:p.nameZh,nightEnd:plan.end,target:{name:p.name,alt:p.alt,az:p.az},moon:{name:t('月亮','Moon'),alt:h.moonAlt,az:h.moonAz}};
     finder.update(sky);stage.update(sky);
     $('bearing-rows').innerHTML=bearingRow(p.name,p.alt,p.az,'')+bearingRow(t('月亮','Moon'),h.moonAlt,h.moonAz,'lunar');
@@ -278,7 +292,7 @@ export function start(){
   }
   function recentPlaces(){
     const list=read('recent',[]);
-    return Array.isArray(list)?list.filter(p=>p&&Number.isFinite(p.lat)&&Number.isFinite(p.lon)&&M.areaFor(p.lat,p.lon)).slice(0,3):[];
+    return Array.isArray(list)?list.filter(validStored).slice(0,3):[];
   }
   function renderRecent(){
     const list=recentPlaces(),host=$('recent-buttons');host.replaceChildren();
@@ -286,13 +300,25 @@ export function start(){
     for(const place of list){
       const b=document.createElement('button');b.type='button';b.className='recent-choice';
       const name=document.createElement('span');name.textContent=M.nameOf(place);
-      const area=document.createElement('small');area.textContent=M.stateOf(place)||M.coord(place.lat,place.lon);
+      const area=document.createElement('small');area.textContent=isGoogle(place)?'Google Maps':M.stateOf(place)||M.coord(place.lat,place.lon);
       b.append(name,area);b.onclick=()=>changePlace(place);host.append(b);
     }
   }
   function showRoute(moveFocus=false){
     finder.close();
     clearDevice();
+    document.body.toggleAttribute('data-google-place',isGoogle(state.place));
+    if(isGoogle(state.place)&&!Number.isFinite(state.place.lat)){
+      const pending=state,ref=state.place;state.place=null;
+      showRoute(false);
+      $('location-status').textContent=t('正在读取 Google 地点…','Loading the Google place…');
+      resolvePlace(ref).then(p=>{if(state!==pending||$('location-search').value)return;state.place=p;showRoute(moveFocus);}).catch(()=>{
+        if(state!==pending||$('location-search').value)return;
+        $('location-search').value=ref.userLabel||'';
+        $('location-status').textContent=t('未能读取此地点。可重试搜索或输入坐标。','Could not load this place. Search again or enter coordinates.');
+      });
+      return;
+    }
     const hasPlace=!!state.place;
     $('place-home').hidden=hasPlace;$('plan-view').hidden=!hasPlace;stage.route(hasPlace);
     if(hasPlace){
@@ -311,7 +337,7 @@ export function start(){
   }
   function changePlace(p){
     state={...freshPlan(),place:p};followWindow=true;
-    write('recent',[p,...recentPlaces().filter(x=>!atSame(x,p))].slice(0,3));
+    write('recent',[storedPlace(p),...recentPlaces().filter(x=>!atSame(x,p))].slice(0,3));
     syncRoute('pushState');showRoute(true);
   }
   function hour(i){
@@ -383,7 +409,7 @@ export function start(){
     for(const p of list){
       const row=document.createElement('div');row.className='saved-row';
       const b=document.createElement('button');b.className='saved-choice';
-      b.innerHTML=escape(M.nameOf(p))+'<small>'+escape(M.coord(p.lat,p.lon))+'</small>';b.onclick=()=>{$('info-dialog').close();changePlace(p);};
+      b.innerHTML=escape(M.nameOf(p))+'<small>'+escape(isGoogle(p)?'Google Maps':M.coord(p.lat,p.lon))+'</small>';b.onclick=()=>{$('info-dialog').close();changePlace(p);};
       const remove=document.createElement('button');remove.className='ico';remove.setAttribute('aria-label',t('移除收藏 '+M.nameOf(p),'Remove '+M.nameOf(p)+' from saved places'));remove.innerHTML=icon('trash-2');
       remove.onclick=()=>{write('places',bookmarks().filter(pt=>!atSame(pt,p)));showSaved();syncSaved();};
       row.append(b,remove);$('info-body').append(row);
@@ -407,8 +433,11 @@ export function start(){
     if(!state.place)clearDevice();
     currentView=view;
     if(view==='finder'&&state.place){finder.open();return;}
-    if(view==='map'){if($('info-dialog').open)$('info-dialog').close();M.open(state.place,changePlace);}
+    if(view==='map'){if($('info-dialog').open)$('info-dialog').close();M.open(isGoogle(state.place)?null:state.place,changePlace);}
     if(view==='guide')info(t('读图指南','Reading the charts'),guide());
+    if(view==='privacy')info(t('地点搜索与隐私','Location search & privacy'),
+      '<p>'+t('使用 Google 地点搜索时，输入内容和界面语言通过本站服务器发送给 Google。选择地点后，网站用其坐标计算星历、查询天气和光污染。收藏和分享 Google 地点时使用地点 ID 和你输入的搜索词。','When you use Google place search, this site sends your search text and interface language to Google through its server. After selection, coordinates are used for sky calculations, weather and skyglow. Bookmarks and links for Google places use a place ID and the text you entered.')+'</p><p>'+
+      t('使用 Google 地点搜索也适用 ','Google place search is subject to the ')+links('https://www.google.com/intl/en/help/terms_maps/','Google Maps Terms of Service')+' · '+links('https://policies.google.com/privacy','Google Privacy Policy')+'</p>');
     if(view==='photo')info(t('照片与摄影署名','Photograph and credits'),photoHTML());
     if(view==='saved')showSaved();
     if(view==='share'&&state.place)showShare();
@@ -434,7 +463,8 @@ export function start(){
     state.date=date;state.demo=false;state.index=null;followWindow=true;syncRoute();refresh();
   }
   function init(){
-    L.init();icons();M.init();window.PlacePicker.init(changePlace);setNight(read('red',false),false);
+    L.init();icons();M.init();window.PlacePicker.init(changePlace,searchGoogle);setNight(read('red',false),false);
+    document.querySelectorAll('[data-place-lookup]').forEach(b=>b.onclick=()=>searchGoogle($(b.dataset.placeLookup).value));
     document.querySelector('.skip').onclick=e=>{e.preventDefault();$(state.place?'location-title':'location-search').focus();};
     $('lang-toggle').onclick=changeLanguage;
     $('jump-glow').onclick=()=>{
@@ -452,7 +482,7 @@ export function start(){
     $('moon-toggle').onclick=()=>{state.noMoon=!state.noMoon;$('moon-toggle').setAttribute('aria-checked',String(state.noMoon));followWindow=true;compute();syncRoute();};
     $('retry-summary').onclick=()=>refresh(true);
     $('save-place').onclick=()=>{
-      const l=bookmarks(),saved=l.some(p=>atSame(p,state.place));const ok=write('places',saved?l.filter(p=>!atSame(p,state.place)):[state.place,...l]);syncSaved();
+      const l=bookmarks(),saved=l.some(p=>atSame(p,state.place));const ok=write('places',saved?l.filter(p=>!atSame(p,state.place)):[storedPlace(state.place),...l]);syncSaved();
       if(!ok)notice('当前浏览器无法保存收藏','This browser could not save the place');
       else if(saved)notice('已从收藏移除','Removed from saved places');
       else notice('已收藏在此浏览器','Place saved in this browser');

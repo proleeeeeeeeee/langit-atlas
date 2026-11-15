@@ -19,7 +19,7 @@ export function stageRenderer(canvas:HTMLCanvasElement, labels:HTMLElement, pin:
     if(!w||!h||renderer.getContext().isContextLost())return;
     if(w!==width||h!==height){renderer.setSize(w,h,false);width=w;height=h;}
     const {name,frame,x,y,progress,red}=view;
-    if(name==='earth'||name==='conditions'||!frame){
+    if(name==='earth'||(name==='conditions'&&!frame?.skyOnly)||!frame){
       labels.hidden=true;
       const home=name==='earth' || !frame;
       const lat=home?3.14:frame.lat,lon=home?101.69:frame.lon;
